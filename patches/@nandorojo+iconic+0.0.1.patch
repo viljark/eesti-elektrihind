@@ -1,0 +1,13 @@
+diff --git a/node_modules/@nandorojo/iconic/package.json b/node_modules/@nandorojo/iconic/package.json
+index f1fdb6c..248c80b 100644
+--- a/node_modules/@nandorojo/iconic/package.json
++++ b/node_modules/@nandorojo/iconic/package.json
+@@ -9,7 +9,7 @@
+   "name": "@nandorojo/iconic",
+   "version": "0.0.1",
+   "main": "lib/commonjs/index.js",
+-  "react-native": "src/index.tsx",
++  "react-native": "src/index.ts",
+   "module": "lib/module/index.js",
+   "types": "lib/typescript/src/index.d.ts",
+   "scripts": {
