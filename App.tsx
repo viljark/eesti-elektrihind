@@ -127,7 +127,6 @@ const getGradient = (color: string) => {
 };
 
 const CustomTooltip = (props) => {
-  // console.log(JSON.stringify(props, null, 2));
   return null;
 };
 
@@ -159,13 +158,7 @@ export default function App() {
   // variables
   const snapPoints = useMemo(() => ["20%", "20%"], []);
 
-  // callbacks
-  const handleSheetChanges = useCallback((index: number) => {
-    console.log("handleSheetChanges", index);
-  }, []);
-
   useEffect(() => {
-    console.log(color, oldColor);
     if ([color, oldColor].includes("transparent")) {
       return;
     }
@@ -187,16 +180,8 @@ export default function App() {
   }, []);
 
   const _handleAppStateChange = (nextAppState) => {
-    if (
-      appState.current.match(/inactive|background/) &&
-      nextAppState === "active"
-    ) {
-      console.log("App has come to the foreground!");
-    }
-
     appState.current = nextAppState;
     setAppStateVisible(appState.current);
-    console.log("AppState", appState.current);
   };
 
   useEffect(() => {
@@ -208,10 +193,8 @@ export default function App() {
   async function init() {
     async function initGraph() {
       const prices = await getCurrentPrices();
-      // console.log(prices[0], prices[1]);
       const formattedPrices = prices.map((entry) => {
         const time = new Date(entry.timestamp * 1000);
-        const nextHour = new Date(time.getTime() + 1000 * 60 * 60);
         return {
           hours: formatHours(time),
           price: round((entry.price + entry.price * 0.2) / 10),
@@ -223,14 +206,12 @@ export default function App() {
   }
 
   useEffect(() => {
-    console.log("isNotificationEnabled", isNotificationEnabled);
     if (isNotificationEnabled === null) {
       return;
     }
     if (isNotificationEnabled) {
       checkStatusAsync();
       showPriceNotification();
-      console.log("here");
     } else {
       unregisterBackgroundFetchAsync();
       setIsRegistered(false);
@@ -239,14 +220,12 @@ export default function App() {
   }, [isNotificationEnabled]);
 
   const checkStatusAsync = async () => {
-    console.log("check");
     const status = await BackgroundFetch.getStatusAsync();
     const isRegistered = await TaskManager.isTaskRegisteredAsync(
       BACKGROUND_FETCH_TASK
     );
     setStatus(status);
     setIsRegistered(isRegistered);
-    console.log({ isRegistered, isNotificationEnabled });
     if (!isRegistered && isNotificationEnabled) {
       await registerBackgroundFetchAsync();
     }
@@ -466,8 +445,6 @@ export default function App() {
               <View
                 style={{
                   padding: 20,
-                  // backgroundColor: "rgb(44,83,100)",
-
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
                 }}
@@ -769,7 +746,6 @@ export default function App() {
             onClose={() => {
               setShowSettings(false);
             }}
-            onChange={handleSheetChanges}
           >
             <View style={{ paddingTop: 25 }}>
               <ExpoLinearGradient
