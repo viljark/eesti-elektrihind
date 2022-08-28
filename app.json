@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "viljark",
     "name": "eesti-elektrihind",
     "slug": "eesti-elektrihind",
     "version": "1.0.0",
@@ -24,7 +25,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.viljark.eestielektrihind"
     },
     "web": {
       "favicon": "./assets/favicon.png"
