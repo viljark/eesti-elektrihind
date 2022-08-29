@@ -1,12 +1,6 @@
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   useFonts,
   Inter_700Bold,
@@ -16,7 +10,6 @@ import {
 import {
   Text,
   View,
-  Button,
   Platform,
   StyleSheet,
   Dimensions,
@@ -26,7 +19,6 @@ import {
   TouchableOpacity,
   Switch,
 } from "react-native";
-import { Subscription } from "expo-modules-core/src/EventEmitter";
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
 import { formatHours, round } from "./formatters";
@@ -39,16 +31,9 @@ import {
   VictoryVoronoiContainer,
   Bar,
 } from "victory-native";
-import {
-  Defs,
-  LinearGradient,
-  Path,
-  Stop,
-  ForeignObject,
-  G,
-} from "react-native-svg";
+import { Defs, LinearGradient, Stop } from "react-native-svg";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
-import { blockBackground, commonStyles } from "./styles";
+import { commonStyles } from "./styles";
 import useAsyncStorage from "./useAsyncStorage";
 import { AnimatePresence, MotiView } from "moti";
 import { Settings } from "@nandorojo/iconic";
@@ -57,13 +42,10 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { MotiPressable } from "moti/interactions";
 import { BarProps } from "victory-bar";
 const BACKGROUND_FETCH_TASK = "background-fetch";
-import Chroma from "chroma-js";
 import { usePrevious } from "./usePrevious";
-import { maxBy } from "lodash";
-import { StatusBar } from "expo-status-bar";
+import { AndroidNotificationVisibility } from "expo-notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// 1. Define the task by providing a name and the function that should be executed
-// Note: This needs to be called in the global scope (e.g outside of your React components)
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   const now = Date.now();
 
@@ -79,7 +61,7 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
 // Note: This does NOT need to be in the global scope and CAN be used in your React components!
 async function registerBackgroundFetchAsync() {
   return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-    minimumInterval: 60 * 15, // 15 minutes
+    minimumInterval: 60 * 20, // 20 minutes
     stopOnTerminate: false, // android only,
     startOnBoot: true, // android only
   });
@@ -133,10 +115,6 @@ const CustomTooltip = (props) => {
 
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState("");
-  const [notification, setNotification] =
-    useState<Notifications.Notification>();
-  const notificationListener = useRef<Subscription>();
-  const responseListener = useRef<Subscription>();
   const [isRegistered, setIsRegistered] = useState(false);
   const [color, setColor] = useState("transparent");
   const oldColor = usePrevious(color);
@@ -150,14 +128,16 @@ export default function App() {
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const timer = useRef<NodeJS.Timer>(null);
   const [isNotificationEnabled, setIsNotificationEnabled] =
     useAsyncStorage<boolean>("notification", true);
   const toggleNotification = () => {
     setIsNotificationEnabled(!isNotificationEnabled);
   };
-  // variables
-  const snapPoints = useMemo(() => ["20%", "20%"], []);
+
+  const snapPoints = useMemo(() => {
+    const snapPoint = ((120 / height) * 100).toFixed() + "%";
+    return [snapPoint, snapPoint];
+  }, []);
 
   useEffect(() => {
     if ([color, oldColor].includes("transparent")) {
@@ -207,18 +187,20 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (isNotificationEnabled === null) {
+    if (isNotificationEnabled === null || !expoPushToken) {
       return;
     }
     if (isNotificationEnabled) {
+      console.log("isEnabled");
       checkStatusAsync();
       showPriceNotification();
     } else {
       unregisterBackgroundFetchAsync();
       setIsRegistered(false);
       Notifications.dismissAllNotificationsAsync();
+      AsyncStorage.setItem("lastNowTimestamp", "");
     }
-  }, [isNotificationEnabled]);
+  }, [isNotificationEnabled, expoPushToken]);
 
   const checkStatusAsync = async () => {
     const status = await BackgroundFetch.getStatusAsync();
@@ -230,16 +212,6 @@ export default function App() {
     if (!isRegistered && isNotificationEnabled) {
       await registerBackgroundFetchAsync();
     }
-  };
-
-  const toggleFetchTask = async () => {
-    if (isRegistered) {
-      await unregisterBackgroundFetchAsync();
-    } else {
-      await registerBackgroundFetchAsync();
-    }
-
-    checkStatusAsync();
   };
 
   useEffect(() => {
@@ -284,49 +256,10 @@ export default function App() {
     return "#bd5d78";
   };
 
-  const getGradientBottomColor = (color: string) => {
-    switch (color) {
-      case "magenta":
-        return "#7c4b6c";
-      case "red":
-        return "#6C5B7B";
-      case "yellow":
-        return "#7b785b";
-      case "lightgreen":
-        return "#5f7b5b";
-    }
-    return "#6C5B7B";
-  };
-
-  const getGradientAnimationDirection = (
-    nextColor: string,
-    currentColor: string
-  ) => {
-    const colors = ["magenta", "red", "yellow", "lightgreen"];
-    return colors.indexOf(nextColor) - colors.indexOf(currentColor);
-  };
-
   useEffect(() => {
-    registerForPushNotificationsAsync().then((token) =>
-      setExpoPushToken(token)
-    );
-
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        setNotification(notification);
-      });
-
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        showPriceNotification();
-      });
-
-    return () => {
-      Notifications.removeNotificationSubscription(
-        notificationListener.current
-      );
-      Notifications.removeNotificationSubscription(responseListener.current);
-    };
+    registerForPushNotificationsAsync().then((token) => {
+      setExpoPushToken(token);
+    });
   }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -493,8 +426,6 @@ export default function App() {
                       color: "rgba(255,255,255,0.75)",
                       fontSize: 58,
                       textAlign: "center",
-                      // textShadowColor: color,
-                      // textShadowRadius: 20,
                       width: 200,
                       textShadowOffset: {
                         height: 1,
@@ -769,7 +700,7 @@ export default function App() {
                       zIndex: 1,
                     }}
                   >
-                    Näita elektrihinda teavitusena
+                    Näita 12 tunni elektrihinda teavitusena
                   </Text>
 
                   <Switch
@@ -862,13 +793,19 @@ async function getCurrentPrices() {
       },
     }
   ).then((res) => res.json());
-  const price =
-    (response.data.ee[0].price + response.data.ee[0].price * 0.2) / 10;
+
   return response.data.ee;
 }
 
 async function showPriceNotification() {
   const prices = await getCurrentPrices();
+  const lastNowTimestamp = await AsyncStorage.getItem("lastNowTimestamp");
+  if (lastNowTimestamp && lastNowTimestamp === String(prices[0].timestamp)) {
+    console.log("skipped notification");
+    return;
+  } else {
+    AsyncStorage.setItem("lastNowTimestamp", String(prices[0].timestamp));
+  }
   const formattedPrices = prices.map((entry) => {
     const time = new Date(entry.timestamp * 1000);
     const nextHour = new Date(time.getTime() + 1000 * 60 * 60);
@@ -879,7 +816,7 @@ async function showPriceNotification() {
   });
   const [currentPrice, ...nextPrices] = formattedPrices;
   const body = nextPrices
-    .slice(0, 2)
+    .slice(0, 12)
     .map((nextPrice) => {
       return `${nextPrice.price} s/kWh • ${nextPrice.hours}`;
     })
@@ -904,17 +841,23 @@ async function showPriceNotification() {
 
 async function schedulePushNotification({ title, body, color }) {
   await Notifications.dismissAllNotificationsAsync();
+
   await Notifications.scheduleNotificationAsync({
     content: {
       title,
       body,
       sticky: true,
       sound: false,
-      vibrate: undefined,
+      vibrate: [0, 0, 0, 0],
+      priority: "min",
       color,
+      autoDismiss: false,
     },
 
-    trigger: null,
+    trigger: {
+      seconds: 1,
+      channelId: "price",
+    },
   });
 }
 
@@ -938,13 +881,14 @@ async function registerForPushNotificationsAsync() {
   }
 
   if (Platform.OS === "android") {
-    await Notifications.deleteNotificationChannelAsync("silent");
-    await Notifications.setNotificationChannelAsync("silent", {
-      name: "silent",
-      importance: Notifications.AndroidImportance.LOW,
-      lightColor: "#FF231F7C",
+    await Notifications.setNotificationChannelAsync("price", {
+      name: "Elektrihind",
+      importance: Notifications.AndroidImportance.MIN,
       enableVibrate: false,
       sound: undefined,
+      enableLights: false,
+      showBadge: false,
+      lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
     });
   }
 
