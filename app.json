@@ -32,11 +32,6 @@
       },
       "package": "com.viljark.eestielektrihind"
     },
-	"androidStatusBar": {
-	  "translucent": true,
-	  "backgroundColor": "#00000000",
-	  "barStyle": "light-content"
-	},
 	"web": {
       "favicon": "./assets/favicon.png"
     }

@@ -45,6 +45,7 @@ const BACKGROUND_FETCH_TASK = "background-fetch";
 import { usePrevious } from "./usePrevious";
 import { AndroidNotificationVisibility } from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StatusBar } from "expo-status-bar";
 
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   const now = Date.now();
@@ -262,6 +263,7 @@ export default function App() {
   }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar style={"light"} />
       <View style={styles.container}>
         <MotiView
           style={StyleSheet.absoluteFillObject}
