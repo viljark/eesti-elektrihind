@@ -102,7 +102,7 @@ const getGradient = (color: string) => {
     case "red":
       return ["#ff0000", "#6C5B7B", "#355C7D"];
     case "yellow":
-      return ["#c0b96c", "#7b785b", "#355C7D"];
+      return ["#e3cc0a", "#7b785b", "#355C7D"];
     case "lightgreen":
       return ["#84c06c", "#5f7b5b", "#355C7D"];
   }
@@ -248,7 +248,7 @@ export default function App() {
       case "red":
         return "#ff0000";
       case "yellow":
-        return "#c0b96c";
+        return "#e3cc0a";
       case "lightgreen":
         return "#84c06c";
     }
