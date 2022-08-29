@@ -187,11 +187,10 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (isNotificationEnabled === null || !expoPushToken) {
+    if (isNotificationEnabled === null) {
       return;
     }
     if (isNotificationEnabled) {
-      console.log("isEnabled");
       checkStatusAsync();
       showPriceNotification();
     } else {
@@ -200,7 +199,7 @@ export default function App() {
       Notifications.dismissAllNotificationsAsync();
       AsyncStorage.setItem("lastNowTimestamp", "");
     }
-  }, [isNotificationEnabled, expoPushToken]);
+  }, [isNotificationEnabled]);
 
   const checkStatusAsync = async () => {
     const status = await BackgroundFetch.getStatusAsync();
