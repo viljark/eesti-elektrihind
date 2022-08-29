@@ -60,6 +60,7 @@ const BACKGROUND_FETCH_TASK = "background-fetch";
 import Chroma from "chroma-js";
 import { usePrevious } from "./usePrevious";
 import { maxBy } from "lodash";
+import { StatusBar } from "expo-status-bar";
 
 // 1. Define the task by providing a name and the function that should be executed
 // Note: This needs to be called in the global scope (e.g outside of your React components)
@@ -618,7 +619,7 @@ export default function App() {
                     <VictoryLabel
                       style={{
                         fill: "white",
-                        fontSize: 7,
+                        fontSize: 8,
                       }}
                       dy={-5}
                     />
@@ -650,22 +651,14 @@ export default function App() {
                   ]}
                 />
                 <VictoryAxis
-                  label={"senti / kWh"}
-                  axisLabelComponent={
-                    <VictoryLabel verticalAnchor="middle" textAnchor="start" />
-                  }
                   dependentAxis
                   style={{
                     grid: { stroke: "none" },
                     axis: {
-                      stroke: "#0F2027",
-                      strokeWidth: 1,
-                      strokeOpacity: 1,
+                      stroke: "none",
                     },
                     ticks: {
-                      stroke: "#0F2027",
-                      strokeWidth: 1,
-                      strokeOpacity: 1,
+                      stroke: "none",
                     },
                     tickLabels: { fill: "white", fontSize: 10 },
                     axisLabel: { fill: "white", fontSize: 8 },
@@ -681,9 +674,7 @@ export default function App() {
                       strokeOpacity: 1,
                     },
                     ticks: {
-                      stroke: "#0F2027",
-                      strokeWidth: 1,
-                      strokeOpacity: 1,
+                      stroke: "none",
                     },
                     tickLabels: { fill: "white", fontSize: 10 },
                   }}
@@ -938,7 +929,6 @@ async function registerForPushNotificationsAsync() {
       finalStatus = status;
     }
     if (finalStatus !== "granted") {
-      alert("Failed to get push token for push notification!");
       return;
     }
     token = (await Notifications.getExpoPushTokenAsync()).data;
