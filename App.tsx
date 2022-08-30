@@ -1,51 +1,63 @@
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import { AndroidNotificationVisibility } from "expo-notifications";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
-  useFonts,
-  Inter_700Bold,
-  Inter_300Light,
   Inter_200ExtraLight,
+  Inter_300Light,
+  Inter_700Bold,
+  useFonts,
 } from "@expo-google-fonts/inter";
 import {
-  Text,
-  View,
+  AppState,
+  Dimensions,
   Platform,
   StyleSheet,
-  Dimensions,
+  Text,
   TextInput,
-  Vibration,
-  AppState,
   TouchableOpacity,
-  Switch,
+  Vibration,
+  View,
 } from "react-native";
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
 import { formatHours, round } from "./formatters";
 import {
+  VictoryAxis,
   VictoryBar,
   VictoryChart,
-  VictoryTheme,
-  VictoryAxis,
   VictoryLabel,
+  VictoryTheme,
   VictoryVoronoiContainer,
-  Bar,
 } from "victory-native";
 import { Defs, LinearGradient, Stop } from "react-native-svg";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { commonStyles } from "./styles";
 import useAsyncStorage from "./useAsyncStorage";
 import { AnimatePresence, MotiView } from "moti";
-import { Settings } from "@nandorojo/iconic";
-import BottomSheet from "@gorhom/bottom-sheet";
+import { Settings as SettingsIcon } from "@nandorojo/iconic";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { MotiPressable } from "moti/interactions";
-import { BarProps } from "victory-bar";
-const BACKGROUND_FETCH_TASK = "background-fetch";
 import { usePrevious } from "./usePrevious";
-import { AndroidNotificationVisibility } from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
+import { getCurrentPrices } from "./src/services/getCurrentPrices";
+import { Settings, useSharedSettings } from "./src/components/Settings";
+import {
+  getColor,
+  getGradient,
+  getGradientTopColor,
+  getNotificationIconColor,
+} from "./src/utils/colorUtils";
+import { CustomBar } from "./src/components/CustomBar";
+
+const BACKGROUND_FETCH_TASK = "background-fetch";
 
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   const now = Date.now();
@@ -89,30 +101,6 @@ Notifications.setNotificationHandler({
   }),
 });
 const width = Dimensions.get("window").width;
-const height = Dimensions.get("window").height;
-const absurd = 380;
-const veryHigh = 19.2;
-const high = 11.2;
-const average = 5;
-const low = 2;
-
-const getGradient = (color: string) => {
-  switch (color) {
-    case "magenta":
-      return ["#e722dd", "#7c4b6c", "#355C7D"];
-    case "red":
-      return ["#ff0000", "#6C5B7B", "#355C7D"];
-    case "yellow":
-      return ["#e3cc0a", "#7b785b", "#355C7D"];
-    case "lightgreen":
-      return ["#84c06c", "#5f7b5b", "#355C7D"];
-  }
-  return ["#C06C84", "#6C5B7B", "#355C7D"];
-};
-
-const CustomTooltip = (props) => {
-  return null;
-};
 
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState("");
@@ -128,29 +116,17 @@ export default function App() {
   const priceRef = useRef<TextInput>();
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const [isNotificationEnabled, setIsNotificationEnabled] =
-    useAsyncStorage<boolean>("notification", true);
-  const toggleNotification = () => {
-    setIsNotificationEnabled(!isNotificationEnabled);
-  };
 
-  const snapPoints = useMemo(() => {
-    const snapPoint = ((120 / height) * 100).toFixed() + "%";
-    return [snapPoint, snapPoint];
-  }, []);
-
-  useEffect(() => {
-    if ([color, oldColor].includes("transparent")) {
-      return;
-    }
-  }, [color]);
+  const { isNotificationEnabled, isHistoryEnabled, isVibrationEnabled } =
+    useSharedSettings();
+  const nowHourIndex = isHistoryEnabled ? 6 : 0;
 
   let [fontsLoaded] = useFonts({
     Inter_300Light,
     Inter_200ExtraLight,
     Inter_700Bold,
   });
+
   useEffect(() => {
     const subscription = AppState.addEventListener(
       "change",
@@ -167,14 +143,14 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (appStateVisible === "active") {
+    if (appStateVisible === "active" && isHistoryEnabled !== null) {
       init();
     }
-  }, [appStateVisible]);
+  }, [appStateVisible, isHistoryEnabled]);
 
   async function init() {
     async function initGraph() {
-      const prices = await getCurrentPrices();
+      const prices = await getCurrentPrices(isHistoryEnabled);
       const formattedPrices = prices.map((entry) => {
         const time = new Date(entry.timestamp * 1000);
         return {
@@ -220,47 +196,39 @@ export default function App() {
     }
   }, [data, fontsLoaded]);
 
-  const setCurrentPrice = () => {
+  const setCurrentPrice = useCallback(() => {
     hourRef.current.setNativeProps({
       text: "hetkel",
     });
     priceRef.current.setNativeProps({
-      text: String(data[0].price.toFixed(2)),
+      text: String(data[nowHourIndex].price.toFixed(2)),
     });
-    setColor(getColor(data[0].price));
-  };
-
-  const getColor = (price: number) => {
-    return price >= absurd
-      ? "magenta"
-      : price >= veryHigh
-      ? "red"
-      : price >= high
-      ? "yellow"
-      : price >= average
-      ? "lightgreen"
-      : "lightgreen";
-  };
-
-  const getGradientTopColor = (color: string) => {
-    switch (color) {
-      case "magenta":
-        return "#e722dd";
-      case "red":
-        return "#ff0000";
-      case "yellow":
-        return "#e3cc0a";
-      case "lightgreen":
-        return "#84c06c";
-    }
-    return "#bd5d78";
-  };
+    setColor(getColor(data[nowHourIndex].price));
+  }, [hourRef, priceRef, setColor, data, nowHourIndex]);
 
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {
       setExpoPushToken(token);
     });
   }, []);
+
+  const handleBarTouch = useCallback(
+    ([{ hours, price }]) => {
+      const hourNow = Number(hours);
+      const nextHour = hourNow === 23 ? 0 : hourNow + 1;
+      hourRef.current.setNativeProps({
+        text: `${hours}:00 - ${nextHour < 10 ? "0" + nextHour : nextHour}:00`,
+      });
+      priceRef.current.setNativeProps({
+        text: String(price.toFixed(2)),
+      });
+      if (isVibrationEnabled) {
+        Vibration.vibrate([0, 0, 0, 1]);
+      }
+      setColor(getColor(price));
+    },
+    [hourRef, priceRef, isVibrationEnabled]
+  );
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style={"light"} />
@@ -313,11 +281,6 @@ export default function App() {
             backgroundColor: "black",
           }}
         />
-        {/*<ExpoLinearGradient*/}
-        {/*  start={[-0.5, 0]}*/}
-        {/*  colors={["#2c5364", "#203A43", "#0F2027"]}*/}
-        {/*  style={styles.background}*/}
-        {/*/>*/}
         <AnimatePresence>
           {data?.length && fontsLoaded ? (
             <MotiView
@@ -384,15 +347,6 @@ export default function App() {
                   borderTopRightRadius: 16,
                 }}
               >
-                {/*<ExpoLinearGradient*/}
-                {/*  colors={["#2c5364", "#203A43", "#0F2027"]}*/}
-                {/*  start={[0.5, 0]}*/}
-                {/*  style={{*/}
-                {/*    ...StyleSheet.absoluteFillObject,*/}
-                {/*    borderTopLeftRadius: 16,*/}
-                {/*    borderTopRightRadius: 16,*/}
-                {/*  }}*/}
-                {/*/>*/}
                 <View
                   style={{
                     display: "flex",
@@ -459,36 +413,11 @@ export default function App() {
                 }}
                 domainPadding={{ x: 11, y: 0 }}
                 theme={VictoryTheme.material}
-                events={[
-                  {
-                    target: "data",
-                    eventHandlers: {},
-                  },
-                ]}
                 containerComponent={
                   <VictoryVoronoiContainer
                     voronoiDimension="x"
-                    onActivated={([{ hours, price }]) => {
-                      const hourNow = Number(hours);
-                      const nextHour = hourNow === 23 ? 0 : hourNow + 1;
-                      hourRef.current.setNativeProps({
-                        text: `${hours}:00-${
-                          nextHour < 10 ? "0" + nextHour : nextHour
-                        }:00`,
-                      });
-                      priceRef.current.setNativeProps({
-                        text: String(price.toFixed(2)),
-                      });
-                      Vibration.vibrate([0, 0, 0, 1]);
-                      setColor(getColor(price));
-                    }}
-                    onTouchEnd={() => {
-                      setCurrentPrice();
-                    }}
-                    labels={({ datum }) =>
-                      `${datum.hours} • ${datum.price} senti/kWh`
-                    }
-                    labelComponent={<CustomTooltip />}
+                    onActivated={handleBarTouch}
+                    onTouchEnd={setCurrentPrice}
                   />
                 }
               >
@@ -527,7 +456,9 @@ export default function App() {
                   >
                     <Stop
                       offset="0%"
-                      stopColor={getGradientTopColor(getColor(data[0].price))}
+                      stopColor={getGradientTopColor(
+                        getColor(data[nowHourIndex].price)
+                      )}
                     />
                     <Stop offset="100%" stopColor="#0F2027" />
                   </LinearGradient>
@@ -536,8 +467,8 @@ export default function App() {
                   data={data}
                   x="hours"
                   y="price"
-                  barWidth={11}
-                  cornerRadius={{ top: 5.5 }}
+                  barWidth={width / 24 - 6}
+                  cornerRadius={{ top: (width / 24 - 6) / 2 }}
                   dataComponent={<CustomBar />}
                   style={{
                     data: {
@@ -556,31 +487,6 @@ export default function App() {
                       dy={-5}
                     />
                   }
-                  events={[
-                    {
-                      target: "data",
-                      eventHandlers: {
-                        onActivated: () => {
-                          return [
-                            {
-                              target: "data",
-                              mutation: () => ({
-                                style: { fill: "gold" },
-                              }),
-                            },
-                          ];
-                        },
-                        onPressOut: () => {
-                          return [
-                            {
-                              target: "data",
-                              mutation: () => {},
-                            },
-                          ];
-                        },
-                      },
-                    },
-                  ]}
                 />
                 <VictoryAxis
                   dependentAxis
@@ -597,7 +503,7 @@ export default function App() {
                   }}
                 />
                 <VictoryAxis
-                  tickCount={Math.round(data.length / 3)}
+                  tickCount={Math.round(data.length / 2)}
                   style={{
                     grid: { stroke: "none" },
                     axis: {
@@ -637,110 +543,16 @@ export default function App() {
             []
           )}
         >
-          <Settings width={42} height={42} color="white" />
+          <SettingsIcon width={42} height={42} color="white" />
         </MotiPressable>
         <TouchableOpacity
           onPressIn={() => setShowSettings(true)}
         ></TouchableOpacity>
-        {showSettings && (
-          <BottomSheet
-            backdropComponent={(props) => (
-              <View
-                {...props}
-                onTouchStart={() => bottomSheetRef.current.close()}
-              />
-            )}
-            backgroundStyle={{
-              backgroundColor: "transparent",
-            }}
-            handleStyle={{
-              padding: 0,
-            }}
-            handleIndicatorStyle={{
-              backgroundColor: "#fff",
-              position: "relative",
-              top: 10,
-            }}
-            ref={bottomSheetRef}
-            index={1}
-            animateOnMount
-            snapPoints={snapPoints}
-            enablePanDownToClose={true}
-            onClose={() => {
-              setShowSettings(false);
-            }}
-          >
-            <View style={{ paddingTop: 25 }}>
-              <ExpoLinearGradient
-                colors={["#2c5364", "#203A43", "#0F2027"]}
-                start={[0.5, 0]}
-                style={{
-                  ...StyleSheet.absoluteFillObject,
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                  height: height / 2,
-                }}
-              />
-              <View
-                style={{ borderBottomColor: "#203A43", borderBottomWidth: 1 }}
-              >
-                <TouchableOpacity
-                  onPress={toggleNotification}
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-around",
-                    paddingVertical: 10,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "#fff",
-                      fontFamily: "Inter_200ExtraLight",
-                      zIndex: 1,
-                    }}
-                  >
-                    Näita 12 tunni elektrihinda teavitusena
-                  </Text>
-
-                  <Switch
-                    trackColor={{ false: "#767577", true: "#203A43" }}
-                    thumbColor={isNotificationEnabled ? "#C06C84" : "#f4f3f4"}
-                    ios_backgroundColor="#3e3e3e"
-                    value={isNotificationEnabled}
-                    onValueChange={toggleNotification}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </BottomSheet>
-        )}
+        {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       </View>
     </GestureHandlerRootView>
   );
 }
-
-const CustomBar = (props: BarProps) => {
-  const hours = props.datum.hours;
-
-  const active = hours === `${formatHours(new Date())}`;
-  return (
-    <Bar
-      {...props}
-      style={{
-        borderColor: "red",
-        ...props.style,
-
-        fill: props.active
-          ? "url(#linearBorder)"
-          : active
-          ? "url(#current)"
-          : props.style.fill,
-      }}
-    />
-  );
-};
 
 const styles = StyleSheet.create({
   container: {
@@ -774,30 +586,6 @@ const styles = StyleSheet.create({
   },
 });
 
-async function getCurrentPrices() {
-  const start = new Date();
-  start.setMinutes(0);
-  start.setSeconds(0);
-  start.setMilliseconds(0);
-
-  const end = new Date(start.getTime() + 1000 * 60 * 60 * 23);
-  const response = await fetch(
-    "https://dashboard.elering.ee/api/nps/price?" +
-      new URLSearchParams({
-        start: start.toISOString(),
-        end: end.toISOString(),
-      }),
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  ).then((res) => res.json());
-
-  return response.data.ee;
-}
-
 async function showPriceNotification() {
   const prices = await getCurrentPrices();
   const lastNowTimestamp = await AsyncStorage.getItem("lastNowTimestamp");
@@ -823,16 +611,7 @@ async function showPriceNotification() {
     })
     .join("\n");
 
-  const color =
-    currentPrice.price >= absurd
-      ? "magenta"
-      : currentPrice.price >= veryHigh
-      ? "red"
-      : currentPrice.price >= high
-      ? "yellow"
-      : currentPrice.price >= average
-      ? "green"
-      : "green";
+  const color = getNotificationIconColor(currentPrice.price);
   await schedulePushNotification({
     title: `${currentPrice.price} senti/kWh • ${currentPrice.hours}`,
     body,
@@ -866,10 +645,12 @@ async function registerForPushNotificationsAsync() {
   let token;
   if (Device.isDevice) {
     const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
+      await Notifications.requestPermissionsAsync();
+
     let finalStatus = existingStatus;
+
     if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
+      const { status } = await Notifications.getPermissionsAsync();
       finalStatus = status;
     }
     if (finalStatus !== "granted") {
@@ -891,6 +672,8 @@ async function registerForPushNotificationsAsync() {
       showBadge: false,
       lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
     });
+
+    console.log("channel registered");
   }
 
   return token;

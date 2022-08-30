@@ -30,7 +30,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.viljark.eestielektrihind"
+      "package": "com.viljark.eestielektrihind",
+	  "useNextNotificationsApi": true
     },
 	"web": {
       "favicon": "./assets/favicon.png"
