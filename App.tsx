@@ -174,7 +174,7 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (isNotificationEnabled === null) {
+    if (isNotificationEnabled === null || isVatEnabled === null) {
       return;
     }
     if (isNotificationEnabled) {
@@ -186,7 +186,7 @@ export default function App() {
       Notifications.dismissAllNotificationsAsync();
       AsyncStorage.setItem("lastNowTimestamp", "");
     }
-  }, [isNotificationEnabled]);
+  }, [isNotificationEnabled, isVatEnabled]);
 
   const checkStatusAsync = async () => {
     const status = await BackgroundFetch.getStatusAsync();
@@ -599,18 +599,28 @@ const styles = StyleSheet.create({
 async function showPriceNotification() {
   const prices = await getCurrentPrices();
   const lastNowTimestamp = await AsyncStorage.getItem("lastNowTimestamp");
-  if (lastNowTimestamp && lastNowTimestamp === String(prices[0].timestamp)) {
+  const isVatEnabled = await AsyncStorage.getItem("vat");
+  if (
+    lastNowTimestamp &&
+    lastNowTimestamp === String(prices[0].timestamp) + isVatEnabled
+  ) {
     console.log("skipped notification");
     return;
   } else {
-    AsyncStorage.setItem("lastNowTimestamp", String(prices[0].timestamp));
+    AsyncStorage.setItem(
+      "lastNowTimestamp",
+      String(prices[0].timestamp) + isVatEnabled
+    );
   }
   const formattedPrices = prices.map((entry) => {
     const time = new Date(entry.timestamp * 1000);
     const nextHour = new Date(time.getTime() + 1000 * 60 * 60);
     return {
       hours: `${formatHours(time)} - ${formatHours(nextHour)}`,
-      price: Math.round((entry.price + entry.price * 0.2) / 10),
+      price:
+        isVatEnabled === "true" || isVatEnabled === ""
+          ? Math.round((entry.price + entry.price * 0.2) / 10)
+          : Math.round(entry.price / 10),
     };
   });
   const [currentPrice, ...nextPrices] = formattedPrices;
