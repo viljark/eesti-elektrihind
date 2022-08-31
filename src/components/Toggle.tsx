@@ -1,6 +1,5 @@
 import React from "react";
 import { Switch, Text, TouchableOpacity, View } from "react-native";
-import { Bell } from "@nandorojo/iconic";
 import { SvgProps } from "react-native-svg";
 
 interface Props {
@@ -48,13 +47,30 @@ export const Toggle: React.FC<Props> = ({ label, value, onToggle, Icon }) => {
           </Text>
         </View>
 
-        <Switch
-          trackColor={{ false: "#203A43", true: "#203A43" }}
-          thumbColor={value ? "#84c06c" : "#407383"}
-          ios_backgroundColor="#3e3e3e"
-          value={value}
-          onValueChange={onToggle}
-        />
+        <TouchableOpacity
+          onPress={onToggle}
+          style={{
+            height: 35,
+            width: 45,
+            position: "relative",
+          }}
+        >
+          <Switch
+            style={{
+              zIndex: -1,
+              padding: 0,
+              margin: 0,
+              height: 35,
+              width: 45,
+              position: "absolute",
+            }}
+            trackColor={{ false: "#203A43", true: "#203A43" }}
+            thumbColor={value ? "#84c06c" : "#407383"}
+            ios_backgroundColor="#3e3e3e"
+            value={value}
+            disabled
+          />
+        </TouchableOpacity>
       </TouchableOpacity>
     </View>
   );
