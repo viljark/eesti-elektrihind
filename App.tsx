@@ -117,8 +117,12 @@ export default function App() {
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
 
-  const { isNotificationEnabled, isHistoryEnabled, isVibrationEnabled } =
-    useSharedSettings();
+  const {
+    isNotificationEnabled,
+    isHistoryEnabled,
+    isVibrationEnabled,
+    isVatEnabled,
+  } = useSharedSettings();
   const nowHourIndex = isHistoryEnabled ? 6 : 0;
 
   let [fontsLoaded] = useFonts({
@@ -143,10 +147,14 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (appStateVisible === "active" && isHistoryEnabled !== null) {
+    if (
+      appStateVisible === "active" &&
+      isHistoryEnabled !== null &&
+      isVatEnabled !== null
+    ) {
       init();
     }
-  }, [appStateVisible, isHistoryEnabled]);
+  }, [appStateVisible, isHistoryEnabled, isVatEnabled]);
 
   async function init() {
     async function initGraph() {
@@ -155,7 +163,9 @@ export default function App() {
         const time = new Date(entry.timestamp * 1000);
         return {
           hours: formatHours(time),
-          price: round((entry.price + entry.price * 0.2) / 10),
+          price: isVatEnabled
+            ? round((entry.price + entry.price * 0.2) / 10)
+            : round(entry.price / 10),
         };
       });
       setData(formattedPrices);
@@ -503,7 +513,7 @@ export default function App() {
                   }}
                 />
                 <VictoryAxis
-                  tickCount={Math.round(data.length / 2)}
+                  tickCount={Math.floor(data.length / 2)}
                   style={{
                     grid: { stroke: "none" },
                     axis: {
@@ -599,7 +609,7 @@ async function showPriceNotification() {
     const time = new Date(entry.timestamp * 1000);
     const nextHour = new Date(time.getTime() + 1000 * 60 * 60);
     return {
-      hours: `${formatHours(time)}-${formatHours(nextHour)}`,
+      hours: `${formatHours(time)} - ${formatHours(nextHour)}`,
       price: Math.round((entry.price + entry.price * 0.2) / 10),
     };
   });
@@ -641,6 +651,19 @@ async function schedulePushNotification({ title, body, color }) {
   });
 }
 
+if (Platform.OS === "android") {
+  Notifications.setNotificationChannelAsync("price", {
+    name: "Elektrihind",
+    importance: Notifications.AndroidImportance.MIN,
+    enableVibrate: false,
+    sound: undefined,
+    enableLights: false,
+    showBadge: false,
+    lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
+  });
+  console.log("channel registered");
+}
+
 async function registerForPushNotificationsAsync() {
   let token;
   if (Device.isDevice) {
@@ -660,20 +683,6 @@ async function registerForPushNotificationsAsync() {
     console.log(token);
   } else {
     // alert("Must use physical device for Push Notifications");
-  }
-
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("price", {
-      name: "Elektrihind",
-      importance: Notifications.AndroidImportance.MIN,
-      enableVibrate: false,
-      sound: undefined,
-      enableLights: false,
-      showBadge: false,
-      lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
-    });
-
-    console.log("channel registered");
   }
 
   return token;

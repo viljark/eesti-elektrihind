@@ -2,7 +2,7 @@ import BottomSheet from "@gorhom/bottom-sheet";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { Toggle } from "./Toggle";
-import { Bell, Clock, Target } from "@nandorojo/iconic";
+import { Bell, Clock, Percentage, Target } from "@nandorojo/iconic";
 import React, { useMemo, useRef } from "react";
 import useAsyncStorage from "../../useAsyncStorage";
 import { useBetween } from "use-between";
@@ -24,14 +24,17 @@ const useSettings = () => {
     "vibration",
     true
   );
+  const [isVatEnabled, setIsVatEnabled] = useAsyncStorage<boolean>("vat", true);
 
   return {
     isNotificationEnabled,
     isHistoryEnabled,
     isVibrationEnabled,
+    isVatEnabled,
     setIsNotificationEnabled,
     setIsHistoryEnabled,
     setIsVibrationEnabled,
+    setIsVatEnabled,
   };
 };
 
@@ -42,14 +45,16 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
     isNotificationEnabled,
     isHistoryEnabled,
     isVibrationEnabled,
+    isVatEnabled,
     setIsNotificationEnabled,
     setIsHistoryEnabled,
     setIsVibrationEnabled,
+    setIsVatEnabled,
   } = useSharedSettings();
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => {
-    const snapPoint = ((280 / height) * 100).toFixed() + "%";
+    const snapPoint = ((300 / height) * 100).toFixed() + "%";
     return [snapPoint, snapPoint];
   }, []);
 
@@ -61,6 +66,9 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
   };
   const toggleVibration = () => {
     setIsVibrationEnabled(!isVibrationEnabled);
+  };
+  const toggleVat = () => {
+    setIsVatEnabled(!isVatEnabled);
   };
 
   return (
@@ -86,7 +94,7 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
       enablePanDownToClose={true}
       onClose={onClose}
     >
-      <View style={{ paddingTop: 25 }}>
+      <View style={{ paddingTop: 25, flex: 1 }}>
         <ExpoLinearGradient
           colors={["#2c5364", "#203A43", "#0F2027"]}
           start={[0.5, 0]}
@@ -108,6 +116,12 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
           onToggle={toggleHistory}
           value={isHistoryEnabled}
           Icon={Clock}
+        />
+        <Toggle
+          label="Käibemaks hinna sees"
+          onToggle={toggleVat}
+          value={isVatEnabled}
+          Icon={Percentage}
         />
         <Toggle
           label="Vibreeri graafiku puudutamisel"

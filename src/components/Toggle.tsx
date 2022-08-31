@@ -42,7 +42,6 @@ export const Toggle: React.FC<Props> = ({ label, value, onToggle, Icon }) => {
             style={{
               color: "#fff",
               fontFamily: "Inter_200ExtraLight",
-              zIndex: 1,
             }}
           >
             {label}
@@ -50,8 +49,8 @@ export const Toggle: React.FC<Props> = ({ label, value, onToggle, Icon }) => {
         </View>
 
         <Switch
-          trackColor={{ false: "#767577", true: "#203A43" }}
-          thumbColor={value ? "#C06C84" : "#f4f3f4"}
+          trackColor={{ false: "#203A43", true: "#203A43" }}
+          thumbColor={value ? "#84c06c" : "#407383"}
           ios_backgroundColor="#3e3e3e"
           value={value}
           onValueChange={onToggle}
