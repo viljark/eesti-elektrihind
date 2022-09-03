@@ -56,6 +56,7 @@ import {
   getNotificationIconColor,
 } from "./src/utils/colorUtils";
 import { CustomBar } from "./src/components/CustomBar";
+import _ from "lodash";
 
 const BACKGROUND_FETCH_TASK = "background-fetch";
 
@@ -102,6 +103,16 @@ Notifications.setNotificationHandler({
 });
 const width = Dimensions.get("window").width;
 
+const ONE_HOUR = 1000 * 60 * 60;
+
+function _tickFormatter(date: Date) {
+  const now = new Date().getHours();
+  const nowOdd = now % 2;
+  return date.getHours() % 2 === nowOdd ? formatHours(date) : "";
+}
+
+const tickFormatter = _.memoize(_tickFormatter, (value) => value.getTime());
+
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState("");
   const [isRegistered, setIsRegistered] = useState(false);
@@ -110,9 +121,10 @@ export default function App() {
   const [status, setStatus] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [data, setData] = useAsyncStorage<
-    Array<{ hours: string; price: number }>
+    Array<{ timestamp: number; price: number }>
   >("data", []);
   const hourRef = useRef<TextInput>();
+  const hoursToRef = useRef<TextInput>();
   const priceRef = useRef<TextInput>();
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
@@ -160,9 +172,8 @@ export default function App() {
     async function initGraph() {
       const prices = await getCurrentPrices(isHistoryEnabled);
       const formattedPrices = prices.map((entry) => {
-        const time = new Date(entry.timestamp * 1000);
         return {
-          hours: formatHours(time),
+          timestamp: entry.timestamp * 1000,
           price: isVatEnabled
             ? round((entry.price + entry.price * 0.2) / 10)
             : round(entry.price / 10),
@@ -210,11 +221,14 @@ export default function App() {
     hourRef.current.setNativeProps({
       text: "hetkel",
     });
+    hoursToRef.current.setNativeProps({
+      text: "",
+    });
     priceRef.current.setNativeProps({
       text: String(data[nowHourIndex].price.toFixed(2)),
     });
     setColor(getColor(data[nowHourIndex].price));
-  }, [hourRef, priceRef, setColor, data, nowHourIndex]);
+  }, [hourRef, priceRef, hoursToRef, setColor, data, nowHourIndex]);
 
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {
@@ -223,11 +237,28 @@ export default function App() {
   }, []);
 
   const handleBarTouch = useCallback(
-    ([{ hours, price }]) => {
-      const hourNow = Number(hours);
-      const nextHour = hourNow === 23 ? 0 : hourNow + 1;
+    ([{ timestamp, price }]) => {
+      const date = new Date(timestamp);
+      const hourNow = formatHours(date);
+      const nextHour = formatHours(new Date(timestamp + ONE_HOUR));
+      const diff = timestamp - new Date().getTime();
+      const hours = Math.floor(diff / ONE_HOUR);
+      const minutes = Math.round((diff % ONE_HOUR) / (1000 * 60));
+      let hoursTo = "";
+      if (hours > 0 || minutes > 0) {
+        hoursTo = "+";
+        if (hours > 0) {
+          hoursTo += `${hours}h`;
+        }
+        if (minutes > 0) {
+          hoursTo += `${hoursTo === "+" ? "" : " "}${minutes}min`;
+        }
+      }
       hourRef.current.setNativeProps({
-        text: `${hours}:00 - ${nextHour < 10 ? "0" + nextHour : nextHour}:00`,
+        text: `${hourNow}:00 -  ${nextHour}:00`,
+      });
+      hoursToRef.current.setNativeProps({
+        text: hoursTo,
       });
       priceRef.current.setNativeProps({
         text: String(price.toFixed(2)),
@@ -237,8 +268,9 @@ export default function App() {
       }
       setColor(getColor(price));
     },
-    [hourRef, priceRef, isVibrationEnabled]
+    [hourRef, priceRef, hoursToRef, isVibrationEnabled]
   );
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style={"light"} />
@@ -360,7 +392,7 @@ export default function App() {
                 <View
                   style={{
                     display: "flex",
-                    flexDirection: "row",
+                    flexDirection: "column",
                     alignItems: "center",
                     width: "100%",
                     justifyContent: "center",
@@ -373,6 +405,18 @@ export default function App() {
                       color: "#fff",
                       fontFamily: "Inter_300Light",
                       minWidth: 43,
+                    }}
+                  />
+                  <TextInput
+                    ref={hoursToRef}
+                    editable={false}
+                    style={{
+                      color: "#fff",
+                      fontFamily: "Inter_300Light",
+                      minWidth: 43,
+                      fontSize: 11,
+                      marginTop: -10,
+                      marginBottom: -15,
                     }}
                   />
                 </View>
@@ -421,11 +465,13 @@ export default function App() {
                   bottom: 35,
                   right: 10,
                 }}
+                scale={{ x: "time" }}
                 domainPadding={{ x: 11, y: 0 }}
                 theme={VictoryTheme.material}
                 containerComponent={
                   <VictoryVoronoiContainer
                     voronoiDimension="x"
+                    activateLabels={false}
                     onActivated={handleBarTouch}
                     onTouchEnd={setCurrentPrice}
                   />
@@ -447,7 +493,7 @@ export default function App() {
                   </LinearGradient>
                   {/* @ts-ignore */}
                   <LinearGradient
-                    id="linearBorder"
+                    id="selectedHour"
                     x1="0%"
                     y1="0%"
                     x2="0%"
@@ -458,7 +504,7 @@ export default function App() {
                   </LinearGradient>
                   {/* @ts-ignore */}
                   <LinearGradient
-                    id="current"
+                    id="currentHour"
                     x1="0%"
                     y1="0%"
                     x2="0%"
@@ -475,7 +521,7 @@ export default function App() {
                 </Defs>
                 <VictoryBar
                   data={data}
-                  x="hours"
+                  x="timestamp"
                   y="price"
                   barWidth={width / 24 - 6}
                   cornerRadius={{ top: (width / 24 - 6) / 2 }}
@@ -513,7 +559,8 @@ export default function App() {
                   }}
                 />
                 <VictoryAxis
-                  tickCount={Math.floor(data.length / 2)}
+                  tickCount={data.length}
+                  tickFormat={tickFormatter}
                   style={{
                     grid: { stroke: "none" },
                     axis: {
@@ -614,7 +661,7 @@ async function showPriceNotification() {
   }
   const formattedPrices = prices.map((entry) => {
     const time = new Date(entry.timestamp * 1000);
-    const nextHour = new Date(time.getTime() + 1000 * 60 * 60);
+    const nextHour = new Date(time.getTime() + ONE_HOUR);
     return {
       hours: `${formatHours(time)} - ${formatHours(nextHour)}`,
       price:

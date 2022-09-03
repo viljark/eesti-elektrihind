@@ -4,7 +4,7 @@ import { Bar } from "victory-native";
 import React from "react";
 
 export const CustomBar = (props: BarProps) => {
-  const hours = props.datum.hours;
+  const hours = formatHours(new Date(props.datum.timestamp));
 
   const active = hours === `${formatHours(new Date())}`;
   return (
@@ -15,9 +15,9 @@ export const CustomBar = (props: BarProps) => {
         ...props.style,
 
         fill: props.active
-          ? "url(#linearBorder)"
+          ? "url(#selectedHour)"
           : active
-          ? "url(#current)"
+          ? "url(#currentHour)"
           : props.style.fill,
       }}
     />
