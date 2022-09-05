@@ -190,7 +190,9 @@ export default function App() {
     }
     if (isNotificationEnabled) {
       checkStatusAsync();
-      showPriceNotification();
+      channelPromise.then(() => {
+        showPriceNotification();
+      });
     } else {
       unregisterBackgroundFetchAsync();
       setIsRegistered(false);
@@ -696,7 +698,7 @@ async function schedulePushNotification({ title, body, color }) {
       sticky: true,
       sound: false,
       vibrate: [0, 0, 0, 0],
-      priority: "min",
+      priority: "high",
       color,
       autoDismiss: false,
     },
@@ -708,6 +710,11 @@ async function schedulePushNotification({ title, body, color }) {
   });
 }
 
+let channelResolve;
+let channelPromise = new Promise((resolve, reject) => {
+  channelResolve = resolve;
+});
+
 if (Platform.OS === "android") {
   Notifications.setNotificationChannelAsync("price", {
     name: "Elektrihind",
@@ -717,8 +724,13 @@ if (Platform.OS === "android") {
     enableLights: false,
     showBadge: false,
     lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
+  }).then(() => {
+    channelResolve();
   });
+
   console.log("channel registered");
+} else {
+  channelResolve();
 }
 
 async function registerForPushNotificationsAsync() {
