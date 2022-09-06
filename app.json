@@ -21,12 +21,14 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
-    },
+      "supportsTablet": true,
+	  "buildNumber": "1.0.1"
+	},
     "notification": {
       "icon": "assets/notification-icon.png"
     },
     "android": {
+	  "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
