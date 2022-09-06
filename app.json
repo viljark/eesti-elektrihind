@@ -3,18 +3,19 @@
     "owner": "viljark",
     "name": "Elektrihind",
     "slug": "eesti-elektrihind",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-	"jsEngine": "hermes",
+    "jsEngine": "hermes",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/94cc5948-bade-4c06-a1c5-967f31ca89e9"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -22,19 +23,22 @@
     "ios": {
       "supportsTablet": true
     },
-	"notification": {
-	  "icon": "assets/notification-icon.png"
-	},
-	"android": {
+    "notification": {
+      "icon": "assets/notification-icon.png"
+    },
+    "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
       "package": "com.viljark.eestielektrihind",
-	  "useNextNotificationsApi": true
+      "useNextNotificationsApi": true
     },
-	"web": {
+    "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     }
   }
 }
