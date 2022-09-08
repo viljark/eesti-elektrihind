@@ -106,7 +106,7 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
           }}
         />
         <Toggle
-          label="Näita hinda teavituste ribal"
+          label="Näita elektrihinda teavitustes"
           onToggle={toggleNotification}
           value={isNotificationEnabled}
           Icon={Bell}
