@@ -22,9 +22,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Vibration,
   View,
 } from "react-native";
+import * as Haptics from "expo-haptics";
+import { ImpactFeedbackStyle } from "expo-haptics";
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
 import { formatHours, round } from "./formatters";
@@ -266,7 +267,7 @@ export default function App() {
         text: String(price.toFixed(2)),
       });
       if (isVibrationEnabled) {
-        Vibration.vibrate([0, 0, 0, 1]);
+        Haptics.impactAsync(ImpactFeedbackStyle.Light);
       }
       setColor(getColor(price));
     },

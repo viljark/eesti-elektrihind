@@ -22,6 +22,7 @@
     "expo": "~46.0.8",
     "expo-background-fetch": "~10.3.0",
     "expo-device": "~4.3.0",
+    "expo-haptics": "~11.3.0",
     "expo-linear-gradient": "~11.4.0",
     "expo-notifications": "~0.16.1",
     "expo-status-bar": "~1.4.0",
