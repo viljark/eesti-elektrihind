@@ -29,18 +29,20 @@ export const Toggle: React.FC<Props> = ({ label, value, onToggle, Icon }) => {
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
+            flex: 1,
           }}
         >
           <Icon
             width={24}
             height={24}
             color="#fff"
-            style={{ marginRight: 8 }}
+            style={{ marginRight: 8, flex: 0, flexBasis: 24 }}
           />
           <Text
             style={{
               color: "#fff",
               fontFamily: "Inter_200ExtraLight",
+              flex: 1,
             }}
           >
             {label}
@@ -53,6 +55,8 @@ export const Toggle: React.FC<Props> = ({ label, value, onToggle, Icon }) => {
             height: 35,
             width: 45,
             position: "relative",
+            flex: 0,
+            flexBasis: 45,
           }}
         >
           <Switch
