@@ -1,13 +1,7 @@
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { AndroidNotificationVisibility } from "expo-notifications";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Inter_200ExtraLight,
   Inter_300Light,
@@ -16,12 +10,11 @@ import {
 } from "@expo-google-fonts/inter";
 import {
   AppState,
-  Dimensions,
   Platform,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -42,9 +35,7 @@ import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { commonStyles } from "./styles";
 import useAsyncStorage from "./useAsyncStorage";
 import { AnimatePresence, MotiView } from "moti";
-import { Settings as SettingsIcon } from "@nandorojo/iconic";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { MotiPressable } from "moti/interactions";
 import { usePrevious } from "./usePrevious";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
@@ -58,6 +49,7 @@ import {
 } from "./src/utils/colorUtils";
 import { CustomBar } from "./src/components/CustomBar";
 import _ from "lodash";
+import { SettingsButton } from "./src/components/SettingsButton";
 
 const BACKGROUND_FETCH_TASK = "background-fetch";
 
@@ -102,7 +94,6 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
-const width = Dimensions.get("window").width;
 
 const ONE_HOUR = 1000 * 60 * 60;
 
@@ -129,7 +120,7 @@ export default function App() {
   const priceRef = useRef<TextInput>();
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
-
+  const { width, height } = useWindowDimensions();
   const {
     isNotificationEnabled,
     isHistoryEnabled,
@@ -143,6 +134,8 @@ export default function App() {
     Inter_200ExtraLight,
     Inter_700Bold,
   });
+
+  const isLandscape = width > height;
 
   useEffect(() => {
     const subscription = AppState.addEventListener(
@@ -258,7 +251,7 @@ export default function App() {
         }
       }
       hourRef.current.setNativeProps({
-        text: `${hourNow}:00 -  ${nextHour}:00`,
+        text: `${hourNow}:00 - ${nextHour}:00`,
       });
       hoursToRef.current.setNativeProps({
         text: hoursTo,
@@ -273,6 +266,8 @@ export default function App() {
     },
     [hourRef, priceRef, hoursToRef, isVibrationEnabled]
   );
+
+  const graphWidth = isLandscape ? 0.7 * width : width - width / 10;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -360,7 +355,7 @@ export default function App() {
               >
                 <ExpoLinearGradient
                   colors={getGradient(oldColor)}
-                  start={[0.5, 0]}
+                  start={[isLandscape ? 1.2 : 0.5, 0]}
                   style={styles.chartBackground}
                 />
               </MotiView>
@@ -381,233 +376,236 @@ export default function App() {
               >
                 <ExpoLinearGradient
                   colors={getGradient(color)}
-                  start={[0.5, 0]}
+                  start={[isLandscape ? 1.2 : 0.5, 0]}
                   style={styles.chartBackground}
                 />
               </MotiView>
               <View
                 style={{
-                  padding: 20,
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
+                  display: "flex",
+                  flexDirection: isLandscape ? "row" : "column",
                 }}
               >
                 <View
                   style={{
+                    padding: 20,
+                    borderTopLeftRadius: 16,
+                    borderTopRightRadius: 16,
                     display: "flex",
-                    flexDirection: "column",
                     alignItems: "center",
-                    width: "100%",
+                    width: isLandscape ? 0.25 * width : undefined,
                     justifyContent: "center",
                   }}
                 >
-                  <TextInput
-                    ref={hourRef}
-                    editable={false}
+                  <View
                     style={{
-                      color: "#fff",
-                      fontFamily: "Inter_300Light",
-                      minWidth: 43,
-                    }}
-                  />
-                  <TextInput
-                    ref={hoursToRef}
-                    editable={false}
-                    style={{
-                      color: "#fff",
-                      fontFamily: "Inter_300Light",
-                      minWidth: 43,
-                      fontSize: 11,
-                      marginTop: -10,
-                      marginBottom: -15,
-                    }}
-                  />
-                </View>
-                <View
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  <TextInput
-                    ref={priceRef}
-                    editable={false}
-                    textAlign="center"
-                    style={{
-                      color: "rgba(255,255,255,0.75)",
-                      fontSize: 58,
-                      textAlign: "center",
-                      width: 200,
-                      textShadowOffset: {
-                        height: 1,
-                        width: 1,
-                      },
-                      fontFamily: "Inter_300Light",
-                    }}
-                  />
-                  <Text
-                    style={{
-                      marginLeft: 12,
-                      color: "#fff",
-                      fontSize: 14,
-                      fontFamily: "Inter_200ExtraLight",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      width: "100%",
+                      justifyContent: "center",
                     }}
                   >
-                    senti / kWh
-                  </Text>
-                </View>
-              </View>
-
-              <VictoryChart
-                width={width - 40}
-                height={350}
-                padding={{
-                  left: 35,
-                  top: 35,
-                  bottom: 35,
-                  right: 10,
-                }}
-                scale={{ x: "time" }}
-                domainPadding={{ x: 11, y: 0 }}
-                theme={VictoryTheme.material}
-                containerComponent={
-                  <VictoryVoronoiContainer
-                    voronoiDimension="x"
-                    activateLabels={false}
-                    onActivated={handleBarTouch}
-                    onTouchEnd={setCurrentPrice}
-                  />
-                }
-              >
-                <Defs>
-                  {/* @ts-ignore */}
-                  <LinearGradient
-                    id="linear"
-                    x1="0%"
-                    y1="0%"
-                    x2="0%"
-                    y2="100%"
-                    // gradientTransform="rotate(10)"
-                  >
-                    <Stop offset="0%" stopColor="#2c5364" />
-                    <Stop offset="50%" stopColor="#203A43" />
-                    <Stop offset="100%" stopColor="#0F2027" />
-                  </LinearGradient>
-                  {/* @ts-ignore */}
-                  <LinearGradient
-                    id="selectedHour"
-                    x1="0%"
-                    y1="0%"
-                    x2="0%"
-                    y2="100%"
-                  >
-                    <Stop offset="0%" stopColor={getGradientTopColor(color)} />
-                    <Stop offset="100%" stopColor="#0F2027" />
-                  </LinearGradient>
-                  {/* @ts-ignore */}
-                  <LinearGradient
-                    id="currentHour"
-                    x1="0%"
-                    y1="0%"
-                    x2="0%"
-                    y2="100%"
-                  >
-                    <Stop
-                      offset="0%"
-                      stopColor={getGradientTopColor(
-                        getColor(data[nowHourIndex].price)
-                      )}
-                    />
-                    <Stop offset="100%" stopColor="#0F2027" />
-                  </LinearGradient>
-                </Defs>
-                <VictoryBar
-                  data={data}
-                  x="timestamp"
-                  y="price"
-                  barWidth={width / 24 - 6}
-                  cornerRadius={{ top: (width / 24 - 6) / 2 }}
-                  dataComponent={<CustomBar />}
-                  style={{
-                    data: {
-                      fill: "url(#linear)",
-                    },
-                  }}
-                  labels={({ datum, index }) =>
-                    index % 1 === 0 ? `${Math.round(datum.price)}` : ""
-                  }
-                  labelComponent={
-                    <VictoryLabel
+                    <TextInput
+                      ref={hourRef}
+                      editable={false}
                       style={{
-                        fill: "white",
-                        fontSize: 8,
+                        color: "#fff",
+                        fontFamily: "Inter_300Light",
+                        minWidth: 43,
                       }}
-                      dy={-5}
+                    />
+                    <TextInput
+                      ref={hoursToRef}
+                      editable={false}
+                      style={{
+                        color: "#fff",
+                        fontFamily: "Inter_300Light",
+                        minWidth: 43,
+                        fontSize: 11,
+                        marginTop: -10,
+                        marginBottom: -15,
+                      }}
+                    />
+                  </View>
+                  <View
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <TextInput
+                      ref={priceRef}
+                      editable={false}
+                      textAlign="center"
+                      style={{
+                        color: "rgba(255,255,255,0.75)",
+                        fontSize: 58,
+                        textAlign: "center",
+                        width: 200,
+                        textShadowOffset: {
+                          height: 1,
+                          width: 1,
+                        },
+                        fontFamily: "Inter_300Light",
+                      }}
+                    />
+                    <Text
+                      style={{
+                        marginLeft: 12,
+                        color: "#fff",
+                        fontSize: 14,
+                        fontFamily: "Inter_200ExtraLight",
+                      }}
+                    >
+                      senti / kWh
+                    </Text>
+                  </View>
+                </View>
+                <VictoryChart
+                  width={graphWidth}
+                  height={isLandscape ? height - height / 10 : height / 2.5}
+                  padding={{
+                    left: 35,
+                    top: 35,
+                    bottom: 35,
+                    right: 10,
+                  }}
+                  scale={{ x: "time" }}
+                  domainPadding={{ x: 11, y: 0 }}
+                  theme={VictoryTheme.material}
+                  containerComponent={
+                    <VictoryVoronoiContainer
+                      voronoiDimension="x"
+                      activateLabels={false}
+                      onActivated={handleBarTouch}
+                      onTouchEnd={setCurrentPrice}
                     />
                   }
-                />
-                <VictoryAxis
-                  dependentAxis
-                  style={{
-                    grid: { stroke: "none" },
-                    axis: {
-                      stroke: "none",
-                    },
-                    ticks: {
-                      stroke: "none",
-                    },
-                    tickLabels: { fill: "white", fontSize: 10 },
-                    axisLabel: { fill: "white", fontSize: 8 },
-                  }}
-                />
-                <VictoryAxis
-                  tickCount={data.length}
-                  tickFormat={tickFormatter}
-                  style={{
-                    grid: { stroke: "none" },
-                    axis: {
-                      stroke: "#0F2027",
-                      strokeWidth: 1,
-                      strokeOpacity: 1,
-                    },
-                    ticks: {
-                      stroke: "none",
-                    },
-                    tickLabels: { fill: "white", fontSize: 10 },
-                  }}
-                />
-              </VictoryChart>
+                >
+                  <Defs>
+                    {/* @ts-ignore */}
+                    <LinearGradient
+                      id="linear"
+                      x1="0%"
+                      y1="0%"
+                      x2="0%"
+                      y2="100%"
+                      // gradientTransform="rotate(10)"
+                    >
+                      <Stop offset="0%" stopColor="#2c5364" />
+                      <Stop offset="50%" stopColor="#203A43" />
+                      <Stop offset="100%" stopColor="#0F2027" />
+                    </LinearGradient>
+                    {/* @ts-ignore */}
+                    <LinearGradient
+                      id="selectedHour"
+                      x1="0%"
+                      y1="0%"
+                      x2="0%"
+                      y2="100%"
+                    >
+                      <Stop
+                        offset="0%"
+                        stopColor={getGradientTopColor(color)}
+                      />
+                      <Stop offset="100%" stopColor="#0F2027" />
+                    </LinearGradient>
+                    {/* @ts-ignore */}
+                    <LinearGradient
+                      id="currentHour"
+                      x1="0%"
+                      y1="0%"
+                      x2="0%"
+                      y2="100%"
+                    >
+                      <Stop
+                        offset="0%"
+                        stopColor={getGradientTopColor(
+                          getColor(data[nowHourIndex].price)
+                        )}
+                      />
+                      <Stop offset="100%" stopColor="#0F2027" />
+                    </LinearGradient>
+                  </Defs>
+                  <VictoryBar
+                    data={data}
+                    x="timestamp"
+                    y="price"
+                    barWidth={graphWidth / 24 - 4.5}
+                    cornerRadius={{ top: (graphWidth / 24 - 4.5) / 2 }}
+                    dataComponent={<CustomBar />}
+                    style={{
+                      data: {
+                        fill: "url(#linear)",
+                      },
+                    }}
+                    labels={({ datum, index }) =>
+                      index % 1 === 0 ? `${Math.round(datum.price)}` : ""
+                    }
+                    labelComponent={
+                      <VictoryLabel
+                        style={{
+                          fill: "white",
+                          fontSize: isLandscape ? 12 : 8,
+                        }}
+                        dy={-5}
+                      />
+                    }
+                  />
+                  <VictoryAxis
+                    dependentAxis
+                    style={{
+                      grid: { stroke: "none" },
+                      axis: {
+                        stroke: "none",
+                      },
+                      ticks: {
+                        stroke: "none",
+                      },
+                      tickLabels: {
+                        fill: "white",
+                        fontSize: isLandscape ? 12 : 10,
+                      },
+                    }}
+                  />
+                  <VictoryAxis
+                    tickCount={data.length}
+                    tickFormat={tickFormatter}
+                    style={{
+                      grid: { stroke: "none" },
+                      axis: {
+                        stroke: "#0F2027",
+                        strokeWidth: 1,
+                        strokeOpacity: 1,
+                      },
+                      ticks: {
+                        stroke: "none",
+                      },
+                      tickLabels: {
+                        fill: "white",
+                        fontSize: isLandscape ? 12 : 10,
+                      },
+                    }}
+                  />
+                </VictoryChart>
+
+                {isLandscape && (
+                  <View style={{ position: "absolute", bottom: 0, left: 0 }}>
+                    <SettingsButton onPress={() => setShowSettings(true)} />
+                  </View>
+                )}
+              </View>
             </MotiView>
           ) : null}
         </AnimatePresence>
 
-        <MotiPressable
-          transition={{ type: "timing", duration: 100 }}
-          onPress={() => {
-            setShowSettings(true);
-          }}
-          style={{
-            padding: 10,
-            opacity: data?.length && fontsLoaded ? 1 : 0,
-          }}
-          animate={useMemo(
-            () =>
-              ({ pressed }) => {
-                "worklet";
-
-                return {
-                  scale: pressed ? 0.8 : 1,
-                };
-              },
-            []
-          )}
-        >
-          <SettingsIcon width={42} height={42} color="white" />
-        </MotiPressable>
-        <TouchableOpacity
-          onPressIn={() => setShowSettings(true)}
-        ></TouchableOpacity>
+        {data?.length && fontsLoaded && !isLandscape && (
+          <View style={{ marginTop: 24 }}>
+            <SettingsButton onPress={() => setShowSettings(true)} />
+          </View>
+        )}
         {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       </View>
     </GestureHandlerRootView>
@@ -621,6 +619,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
   background: {
     position: "absolute",
@@ -634,7 +633,6 @@ const styles = StyleSheet.create({
     position: "relative",
     borderRadius: 16,
     ...commonStyles.blockShadow,
-    marginBottom: 24,
   },
   chartBackground: {
     position: "absolute",

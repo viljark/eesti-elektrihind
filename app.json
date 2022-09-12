@@ -4,7 +4,7 @@
     "name": "Elektrihind",
     "slug": "eesti-elektrihind",
     "version": "1.0.1",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "jsEngine": "hermes",

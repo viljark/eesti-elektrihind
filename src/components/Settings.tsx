@@ -1,13 +1,11 @@
 import BottomSheet from "@gorhom/bottom-sheet";
-import { Dimensions, StyleSheet, View } from "react-native";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { Toggle } from "./Toggle";
 import { Bell, Clock, Percentage, Target } from "@nandorojo/iconic";
 import React, { useMemo, useRef } from "react";
 import useAsyncStorage from "../../useAsyncStorage";
 import { useBetween } from "use-between";
-
-const height = Dimensions.get("window").height;
 
 interface Props {
   onClose: () => void;
@@ -51,12 +49,14 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
     setIsVibrationEnabled,
     setIsVatEnabled,
   } = useSharedSettings();
-
+  const { width, height } = useWindowDimensions();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => {
     const snapPoint = ((300 / height) * 100).toFixed() + "%";
     return [snapPoint, snapPoint];
-  }, []);
+  }, [height]);
+
+  const isLandscape = width > height;
 
   const toggleNotification = () => {
     setIsNotificationEnabled(!isNotificationEnabled);
@@ -87,6 +87,14 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
         position: "relative",
         top: 10,
       }}
+      containerStyle={
+        isLandscape
+          ? {
+              width: "50%",
+              marginLeft: width / 4,
+            }
+          : {}
+      }
       ref={bottomSheetRef}
       index={1}
       animateOnMount
@@ -102,7 +110,7 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
             ...StyleSheet.absoluteFillObject,
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
-            height: height / 2,
+            height: height,
           }}
         />
         <Toggle
