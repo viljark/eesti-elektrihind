@@ -3,7 +3,7 @@
     "owner": "viljark",
     "name": "Elektrihind",
     "slug": "eesti-elektrihind",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -22,13 +22,13 @@
     ],
     "ios": {
       "supportsTablet": true,
-	  "buildNumber": "1.0.1"
+	  "buildNumber": "1.0.2"
 	},
     "notification": {
       "icon": "assets/notification-icon.png"
     },
     "android": {
-	  "versionCode": 2,
+	  "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
@@ -39,8 +39,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "runtimeVersion": {
-      "policy": "sdkVersion"
-    }
+    "runtimeVersion": "1.0.2"
   }
 }
