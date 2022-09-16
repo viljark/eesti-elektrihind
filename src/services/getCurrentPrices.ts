@@ -1,5 +1,5 @@
 export async function getCurrentPrices(withHistory = false) {
-  let now = new Date();
+  const now = new Date();
   let start = new Date();
   now.setMinutes(0);
   now.setSeconds(0);

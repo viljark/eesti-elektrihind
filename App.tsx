@@ -601,7 +601,7 @@ export default function App() {
           ) : null}
         </AnimatePresence>
 
-        {data?.length && fontsLoaded && !isLandscape && (
+        {!!data?.length && fontsLoaded && !isLandscape && (
           <View style={{ marginTop: 24 }}>
             <SettingsButton onPress={() => setShowSettings(true)} />
           </View>
@@ -666,7 +666,7 @@ async function showPriceNotification() {
     return {
       hours: `${formatHours(time)} - ${formatHours(nextHour)}`,
       price:
-        isVatEnabled === "true" || isVatEnabled === ""
+        isVatEnabled === "true" || isVatEnabled === null
           ? Math.round((entry.price + entry.price * 0.2) / 10)
           : Math.round(entry.price / 10),
     };

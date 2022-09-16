@@ -30,7 +30,6 @@ const absurd = 380;
 const veryHigh = 19.2;
 const high = 11.2;
 const average = 5;
-const low = 2;
 export const getColor = (price: number) => {
   return price >= absurd
     ? "magenta"
