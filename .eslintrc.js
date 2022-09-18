@@ -18,6 +18,7 @@ module.exports = {
   plugins: ["react", "@typescript-eslint", "jsx-expressions"],
   rules: {
     "jsx-expressions/strict-logical-expressions": "error",
+    "@typescript-eslint/ban-ts-comment": "false",
   },
   settings: {
     react: {

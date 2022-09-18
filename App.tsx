@@ -129,7 +129,7 @@ export default function App() {
   } = useSharedSettings();
   const nowHourIndex = isHistoryEnabled ? 6 : 0;
 
-  let [fontsLoaded] = useFonts({
+  const [fontsLoaded] = useFonts({
     Inter_300Light,
     Inter_200ExtraLight,
     Inter_700Bold,
@@ -174,6 +174,7 @@ export default function App() {
         };
       });
       setData(formattedPrices);
+      tickFormatter.cache.clear();
     }
     initGraph();
   }

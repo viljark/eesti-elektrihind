@@ -39,8 +39,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "runtimeVersion": {
-	  "policy": "appVersion"
-	}
+	"runtimeVersion": "1.0.3"
   }
 }
