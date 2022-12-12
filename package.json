@@ -11,7 +11,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+	"lint": "eslint **/*.{ts,tsx}"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.2",
