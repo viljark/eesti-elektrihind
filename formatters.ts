@@ -1,5 +1,5 @@
 export function formatHours(date: Date) {
-  let hours = date.getHours();
+  const hours = date.getHours();
 
   if (hours < 10) {
     return "0" + hours;
@@ -8,5 +8,5 @@ export function formatHours(date: Date) {
 }
 
 export function round(nr: number) {
-  return Math.round((nr + Number.EPSILON) * 100) / 100;
+  return Math.round((nr + Number.EPSILON) * 1000) / 1000;
 }

@@ -166,11 +166,13 @@ export default function App() {
     async function initGraph() {
       const prices = await getCurrentPrices(isHistoryEnabled);
       const formattedPrices = prices.map((entry) => {
+        const price = isVatEnabled
+          ? round((entry.price + entry.price * 0.2) / 10)
+          : round(entry.price / 10);
         return {
           timestamp: entry.timestamp * 1000,
-          price: isVatEnabled
-            ? round((entry.price + entry.price * 0.2) / 10)
-            : round(entry.price / 10),
+          // eslint-disable-next-line no-compare-neg-zero
+          price: price === -0 ? -0.1 : price,
         };
       });
       setData(formattedPrices);
@@ -664,12 +666,14 @@ async function showPriceNotification() {
   const formattedPrices = prices.map((entry) => {
     const time = new Date(entry.timestamp * 1000);
     const nextHour = new Date(time.getTime() + ONE_HOUR);
+    const price =
+      isVatEnabled === "true" || isVatEnabled === null
+        ? Math.round((entry.price + entry.price * 0.2) / 10)
+        : Math.round(entry.price / 10);
     return {
       hours: `${formatHours(time)} - ${formatHours(nextHour)}`,
-      price:
-        isVatEnabled === "true" || isVatEnabled === null
-          ? Math.round((entry.price + entry.price * 0.2) / 10)
-          : Math.round(entry.price / 10),
+      // eslint-disable-next-line no-compare-neg-zero
+      price: price === -0 ? 0 : price,
     };
   });
   const [currentPrice, ...nextPrices] = formattedPrices;
