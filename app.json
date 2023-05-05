@@ -3,7 +3,7 @@
     "owner": "viljark",
     "name": "Elektrihind",
     "slug": "eesti-elektrihind",
-    "version": "1.0.4",
+    "version": "1.1.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -22,28 +22,35 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "1.0.4"
+      "buildNumber": "1.1.0",
+      "bundleIdentifier": "com.viljark.eestielektrihind"
     },
     "notification": {
       "icon": "assets/notification-icon.png"
     },
     "android": {
-      "versionCode": 5,
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.viljark.eestielektrihind",
-      "useNextNotificationsApi": true
+      "package": "com.viljark.eestielektrihind"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "runtimeVersion": "1.0.3",
+    "runtimeVersion": "1.1.0",
     "extra": {
       "eas": {
         "projectId": "94cc5948-bade-4c06-a1c5-967f31ca89e9"
       }
-    }
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/perf",
+      "@react-native-firebase/crashlytics",
+	  "@notifee/react-native"
+	]
   }
 }

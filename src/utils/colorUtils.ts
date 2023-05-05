@@ -53,3 +53,14 @@ export const getNotificationIconColor = (price: number) => {
     ? "green"
     : "green";
 };
+export const getNotificationTextColor = (price: number) => {
+  return price >= absurd
+    ? "#a100b2"
+    : price >= veryHigh
+    ? "#e10000"
+    : price >= high
+    ? "#FFA500"
+    : price >= average
+    ? "#009a42"
+    : "#009a42";
+};

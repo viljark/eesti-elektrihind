@@ -1,11 +1,23 @@
 import BottomSheet from "@gorhom/bottom-sheet";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  Appearance,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { Toggle } from "./Toggle";
-import { Bell, Clock, Percentage, Target } from "@nandorojo/iconic";
+import {
+  Bell,
+  Clock,
+  Percentage,
+  Target,
+  Paintbucket,
+} from "@nandorojo/iconic";
 import React, { useMemo, useRef } from "react";
 import useAsyncStorage from "../../useAsyncStorage";
 import { useBetween } from "use-between";
+import analytics from "@react-native-firebase/analytics";
 
 interface Props {
   onClose: () => void;
@@ -14,6 +26,8 @@ interface Props {
 const useSettings = () => {
   const [isNotificationEnabled, setIsNotificationEnabled] =
     useAsyncStorage<boolean>("notification", true);
+  const [isNotificationColorEnabled, setIsNotificationColorEnabled] =
+    useAsyncStorage<boolean>("notificationColor", true);
   const [isHistoryEnabled, setIsHistoryEnabled] = useAsyncStorage<boolean>(
     "history",
     false
@@ -26,10 +40,12 @@ const useSettings = () => {
 
   return {
     isNotificationEnabled,
+    isNotificationColorEnabled,
     isHistoryEnabled,
     isVibrationEnabled,
     isVatEnabled,
     setIsNotificationEnabled,
+    setIsNotificationColorEnabled,
     setIsHistoryEnabled,
     setIsVibrationEnabled,
     setIsVatEnabled,
@@ -41,10 +57,12 @@ export const useSharedSettings = () => useBetween(useSettings);
 export const Settings: React.FC<Props> = ({ onClose }) => {
   const {
     isNotificationEnabled,
+    isNotificationColorEnabled,
     isHistoryEnabled,
     isVibrationEnabled,
     isVatEnabled,
     setIsNotificationEnabled,
+    setIsNotificationColorEnabled,
     setIsHistoryEnabled,
     setIsVibrationEnabled,
     setIsVatEnabled,
@@ -52,7 +70,7 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
   const { width, height } = useWindowDimensions();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => {
-    const snapPoint = ((300 / height) * 100).toFixed() + "%";
+    const snapPoint = ((310 / height) * 100).toFixed() + "%";
     return [snapPoint, snapPoint];
   }, [height]);
 
@@ -60,17 +78,35 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
 
   const toggleNotification = () => {
     setIsNotificationEnabled(!isNotificationEnabled);
+    analytics().logEvent("notification_toggle", {
+      value: !isNotificationEnabled,
+    });
+  };
+  const toggleNotificationColor = () => {
+    setIsNotificationColorEnabled(!isNotificationColorEnabled);
+    analytics().logEvent("notification_color_toggle", {
+      value: !isNotificationColorEnabled,
+    });
   };
   const toggleHistory = () => {
     setIsHistoryEnabled(!isHistoryEnabled);
+    analytics().logEvent("history_toggle", {
+      value: !isHistoryEnabled,
+    });
   };
   const toggleVibration = () => {
     setIsVibrationEnabled(!isVibrationEnabled);
+    analytics().logEvent("vibration_toggle", {
+      value: !isVibrationEnabled,
+    });
   };
   const toggleVat = () => {
     setIsVatEnabled(!isVatEnabled);
+    analytics().logEvent("vat_toggle", {
+      value: !isVatEnabled,
+    });
   };
-
+  const isDarkTheme = Appearance.getColorScheme() === "dark";
   return (
     <BottomSheet
       backdropComponent={(props) => (
@@ -119,6 +155,15 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
           value={isNotificationEnabled}
           Icon={Bell}
         />
+        {isNotificationEnabled && !isDarkTheme && (
+          <Toggle
+            label="Kasuta teavituses värve"
+            onToggle={toggleNotificationColor}
+            value={isNotificationColorEnabled}
+            Icon={Paintbucket}
+          />
+        )}
+
         <Toggle
           label="Näita graafikul eelmiste tundide hinda"
           onToggle={toggleHistory}

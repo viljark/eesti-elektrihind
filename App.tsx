@@ -2,6 +2,9 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { AndroidNotificationVisibility } from "expo-notifications";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import analytics from "@react-native-firebase/analytics";
+
+import notifee from "@notifee/react-native";
 import {
   Inter_200ExtraLight,
   Inter_300Light,
@@ -22,15 +25,6 @@ import { ImpactFeedbackStyle } from "expo-haptics";
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
 import { formatHours, round } from "./formatters";
-import {
-  VictoryAxis,
-  VictoryBar,
-  VictoryChart,
-  VictoryLabel,
-  VictoryTheme,
-  VictoryVoronoiContainer,
-} from "victory-native";
-import { Defs, LinearGradient, Stop } from "react-native-svg";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { commonStyles } from "./styles";
 import useAsyncStorage from "./useAsyncStorage";
@@ -41,15 +35,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { getCurrentPrices } from "./src/services/getCurrentPrices";
 import { Settings, useSharedSettings } from "./src/components/Settings";
-import {
-  getColor,
-  getGradient,
-  getGradientTopColor,
-  getNotificationIconColor,
-} from "./src/utils/colorUtils";
-import { CustomBar } from "./src/components/CustomBar";
-import _ from "lodash";
+import { getColor, getGradient } from "./src/utils/colorUtils";
 import { SettingsButton } from "./src/components/SettingsButton";
+import { Chart } from "./src/components/Chart";
+import { tickFormatter } from "./src/utils/tickFormatter";
+import { showPriceNotification } from "./src/utils/notification";
+import { ONE_HOUR } from "./src/utils/constants";
 
 const BACKGROUND_FETCH_TASK = "background-fetch";
 
@@ -64,8 +55,6 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   return BackgroundFetch.BackgroundFetchResult.NewData;
 });
 
-// 2. Register the task at some point in your app by providing the same name, and some configuration options for how the background fetch should behave
-// Note: This does NOT need to be in the global scope and CAN be used in your React components!
 async function registerBackgroundFetchAsync() {
   return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
     minimumInterval: 60 * 20, // 20 minutes
@@ -74,9 +63,6 @@ async function registerBackgroundFetchAsync() {
   });
 }
 
-// 3. (Optional) Unregister tasks by specifying the task name
-// This will cancel any future background fetch calls that match the given name
-// Note: This does NOT need to be in the global scope and CAN be used in your React components!
 async function unregisterBackgroundFetchAsync() {
   const isRegistered = await TaskManager.isTaskRegisteredAsync(
     BACKGROUND_FETCH_TASK
@@ -94,16 +80,6 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
-
-const ONE_HOUR = 1000 * 60 * 60;
-
-function _tickFormatter(date: Date) {
-  const now = new Date().getHours();
-  const nowOdd = now % 2;
-  return date.getHours() % 2 === nowOdd ? formatHours(date) : "";
-}
-
-const tickFormatter = _.memoize(_tickFormatter, (value) => value.getTime());
 
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState("");
@@ -126,6 +102,7 @@ export default function App() {
     isHistoryEnabled,
     isVibrationEnabled,
     isVatEnabled,
+    isNotificationColorEnabled,
   } = useSharedSettings();
   const nowHourIndex = isHistoryEnabled ? 6 : 0;
 
@@ -156,11 +133,17 @@ export default function App() {
     if (
       appStateVisible === "active" &&
       isHistoryEnabled !== null &&
-      isVatEnabled !== null
+      isVatEnabled !== null &&
+      isNotificationColorEnabled !== null
     ) {
       init();
     }
-  }, [appStateVisible, isHistoryEnabled, isVatEnabled]);
+  }, [
+    appStateVisible,
+    isHistoryEnabled,
+    isVatEnabled,
+    isNotificationColorEnabled,
+  ]);
 
   async function init() {
     async function initGraph() {
@@ -182,7 +165,11 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (isNotificationEnabled === null || isVatEnabled === null) {
+    if (
+      isNotificationEnabled === null ||
+      isVatEnabled === null ||
+      isNotificationColorEnabled === null
+    ) {
       return;
     }
     if (isNotificationEnabled) {
@@ -193,10 +180,10 @@ export default function App() {
     } else {
       unregisterBackgroundFetchAsync();
       setIsRegistered(false);
-      Notifications.dismissAllNotificationsAsync();
+      notifee.cancelDisplayedNotifications();
       AsyncStorage.setItem("lastNowTimestamp", "");
     }
-  }, [isNotificationEnabled, isVatEnabled]);
+  }, [isNotificationEnabled, isVatEnabled, isNotificationColorEnabled]);
 
   const checkStatusAsync = async () => {
     const status = await BackgroundFetch.getStatusAsync();
@@ -271,6 +258,11 @@ export default function App() {
   );
 
   const graphWidth = isLandscape ? 0.7 * width : width - width / 10;
+
+  async function onSettingsPress() {
+    setShowSettings(true);
+    await analytics().logEvent("settings_open");
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -421,14 +413,7 @@ export default function App() {
                     <TextInput
                       ref={hoursToRef}
                       editable={false}
-                      style={{
-                        color: "#fff",
-                        fontFamily: "Inter_300Light",
-                        minWidth: 43,
-                        fontSize: 11,
-                        marginTop: -10,
-                        marginBottom: -15,
-                      }}
+                      style={styles.hoursTo}
                     />
                   </View>
                   <View
@@ -442,161 +427,28 @@ export default function App() {
                       ref={priceRef}
                       editable={false}
                       textAlign="center"
-                      style={{
-                        color: "rgba(255,255,255,0.75)",
-                        fontSize: 58,
-                        textAlign: "center",
-                        width: 200,
-                        textShadowOffset: {
-                          height: 1,
-                          width: 1,
-                        },
-                        fontFamily: "Inter_300Light",
-                      }}
+                      style={styles.input}
                     />
-                    <Text
-                      style={{
-                        marginLeft: 12,
-                        color: "#fff",
-                        fontSize: 14,
-                        fontFamily: "Inter_200ExtraLight",
-                      }}
-                    >
-                      senti / kWh
-                    </Text>
+                    <Text style={styles.cents}>senti / kWh</Text>
                   </View>
                 </View>
-                <VictoryChart
+                <Chart
                   width={graphWidth}
-                  height={isLandscape ? height - height / 10 : height / 2.5}
-                  padding={{
-                    left: 35,
-                    top: 35,
-                    bottom: 35,
-                    right: 10,
-                  }}
-                  scale={{ x: "time" }}
-                  domainPadding={{ x: 11, y: 0 }}
-                  theme={VictoryTheme.material}
-                  containerComponent={
-                    <VictoryVoronoiContainer
-                      voronoiDimension="x"
-                      activateLabels={false}
-                      onActivated={handleBarTouch}
-                      onTouchEnd={setCurrentPrice}
-                    />
+                  landscape={isLandscape}
+                  height={height}
+                  onActivated={handleBarTouch}
+                  onTouchEnd={setCurrentPrice}
+                  color={color}
+                  data={data}
+                  nowHourIndex={nowHourIndex}
+                  labels={({ datum, index }) =>
+                    index % 1 === 0 ? `${Math.round(datum.price)}` : ""
                   }
-                >
-                  <Defs>
-                    {/* @ts-ignore */}
-                    <LinearGradient
-                      id="linear"
-                      x1="0%"
-                      y1="0%"
-                      x2="0%"
-                      y2="100%"
-                      // gradientTransform="rotate(10)"
-                    >
-                      <Stop offset="0%" stopColor="#2c5364" />
-                      <Stop offset="50%" stopColor="#203A43" />
-                      <Stop offset="100%" stopColor="#0F2027" />
-                    </LinearGradient>
-                    {/* @ts-ignore */}
-                    <LinearGradient
-                      id="selectedHour"
-                      x1="0%"
-                      y1="0%"
-                      x2="0%"
-                      y2="100%"
-                    >
-                      <Stop
-                        offset="0%"
-                        stopColor={getGradientTopColor(color)}
-                      />
-                      <Stop offset="100%" stopColor="#0F2027" />
-                    </LinearGradient>
-                    {/* @ts-ignore */}
-                    <LinearGradient
-                      id="currentHour"
-                      x1="0%"
-                      y1="0%"
-                      x2="0%"
-                      y2="100%"
-                    >
-                      <Stop
-                        offset="0%"
-                        stopColor={getGradientTopColor(
-                          getColor(data[nowHourIndex].price)
-                        )}
-                      />
-                      <Stop offset="100%" stopColor="#0F2027" />
-                    </LinearGradient>
-                  </Defs>
-                  <VictoryBar
-                    data={data}
-                    x="timestamp"
-                    y="price"
-                    barWidth={graphWidth / 24 - 4.5}
-                    cornerRadius={{ top: (graphWidth / 24 - 4.5) / 2 }}
-                    dataComponent={<CustomBar />}
-                    style={{
-                      data: {
-                        fill: "url(#linear)",
-                      },
-                    }}
-                    labels={({ datum, index }) =>
-                      index % 1 === 0 ? `${Math.round(datum.price)}` : ""
-                    }
-                    labelComponent={
-                      <VictoryLabel
-                        style={{
-                          fill: "white",
-                          fontSize: isLandscape ? 12 : 8,
-                        }}
-                        dy={-5}
-                      />
-                    }
-                  />
-                  <VictoryAxis
-                    dependentAxis
-                    style={{
-                      grid: { stroke: "none" },
-                      axis: {
-                        stroke: "none",
-                      },
-                      ticks: {
-                        stroke: "none",
-                      },
-                      tickLabels: {
-                        fill: "white",
-                        fontSize: isLandscape ? 12 : 10,
-                      },
-                    }}
-                  />
-                  <VictoryAxis
-                    tickCount={data.length}
-                    tickFormat={tickFormatter}
-                    style={{
-                      grid: { stroke: "none" },
-                      axis: {
-                        stroke: "#0F2027",
-                        strokeWidth: 1,
-                        strokeOpacity: 1,
-                      },
-                      ticks: {
-                        stroke: "none",
-                      },
-                      tickLabels: {
-                        fill: "white",
-                        fontSize: isLandscape ? 12 : 10,
-                      },
-                    }}
-                  />
-                </VictoryChart>
+                />
 
                 {isLandscape && (
                   <View style={{ position: "absolute", bottom: 0, left: 0 }}>
-                    <SettingsButton onPress={() => setShowSettings(true)} />
+                    <SettingsButton onPress={onSettingsPress} />
                   </View>
                 )}
               </View>
@@ -645,77 +497,34 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderRadius: 25,
   },
+  input: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 58,
+    textAlign: "center",
+    width: 200,
+    textShadowOffset: {
+      height: 1,
+      width: 1,
+    },
+    fontFamily: "Inter_300Light",
+  },
+  hoursTo: {
+    color: "#fff",
+    fontFamily: "Inter_300Light",
+    minWidth: 43,
+    fontSize: 11,
+    marginTop: -10,
+    marginBottom: -15,
+  },
+  cents: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Inter_200ExtraLight",
+  },
 });
 
-async function showPriceNotification() {
-  const prices = await getCurrentPrices();
-  const lastNowTimestamp = await AsyncStorage.getItem("lastNowTimestamp");
-  const isVatEnabled = await AsyncStorage.getItem("vat");
-  if (
-    lastNowTimestamp &&
-    lastNowTimestamp === String(prices[0].timestamp) + isVatEnabled
-  ) {
-    console.log("skipped notification");
-    return;
-  } else {
-    AsyncStorage.setItem(
-      "lastNowTimestamp",
-      String(prices[0].timestamp) + isVatEnabled
-    );
-  }
-  const formattedPrices = prices.map((entry) => {
-    const time = new Date(entry.timestamp * 1000);
-    const nextHour = new Date(time.getTime() + ONE_HOUR);
-    const price =
-      isVatEnabled === "true" || isVatEnabled === null
-        ? Math.round((entry.price + entry.price * 0.2) / 10)
-        : Math.round(entry.price / 10);
-    return {
-      hours: `${formatHours(time)} - ${formatHours(nextHour)}`,
-      // eslint-disable-next-line no-compare-neg-zero
-      price: price === -0 ? 0 : price,
-    };
-  });
-  const [currentPrice, ...nextPrices] = formattedPrices;
-  const body = nextPrices
-    .slice(0, 12)
-    .map((nextPrice) => {
-      return `${nextPrice.price} s/kWh • ${nextPrice.hours}`;
-    })
-    .join("\n");
-
-  const color = getNotificationIconColor(currentPrice.price);
-  await schedulePushNotification({
-    title: `${currentPrice.price} senti/kWh • ${currentPrice.hours}`,
-    body,
-    color,
-  });
-}
-
-async function schedulePushNotification({ title, body, color }) {
-  await Notifications.dismissAllNotificationsAsync();
-
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title,
-      body,
-      sticky: true,
-      sound: false,
-      vibrate: [0, 0, 0, 0],
-      priority: "high",
-      color,
-      autoDismiss: false,
-    },
-
-    trigger: {
-      seconds: 1,
-      channelId: "price",
-    },
-  });
-}
-
 let channelResolve;
-let channelPromise = new Promise((resolve, reject) => {
+const channelPromise = new Promise((resolve, reject) => {
   channelResolve = resolve;
 });
 
