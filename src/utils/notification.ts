@@ -37,7 +37,6 @@ export async function showPriceNotification() {
     lastNowTimestamp &&
     lastNowTimestamp === String(prices[0].timestamp) + isVatEnabled
   ) {
-    // console.log("skipped notification");
     // return;
   } else {
     AsyncStorage.setItem(
@@ -100,7 +99,6 @@ async function showPushNotification({ title, body, color }) {
       smallIcon: "notification_icon",
       channelId: "price",
       color: color,
-      // colorized: true,
       timestamp: Date.now(),
       showTimestamp: true,
       ongoing: true,
@@ -112,7 +110,6 @@ async function showPushNotification({ title, body, color }) {
       pressAction: {
         id: "default",
       },
-
       actions: [
         {
           title: "Uuenda andmeid",
