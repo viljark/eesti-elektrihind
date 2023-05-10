@@ -9,6 +9,46 @@ import { uniqueId } from "lodash";
 import notifee, { AndroidStyle, EventType } from "@notifee/react-native";
 import { ONE_HOUR } from "./constants";
 import analytics from "@react-native-firebase/analytics";
+import * as Notifications from "expo-notifications";
+import { AndroidNotificationVisibility } from "expo-notifications";
+import { Alert } from "react-native";
+import * as Linking from "expo-linking";
+
+export async function registerNotificationChannel() {
+  return Notifications.setNotificationChannelAsync("price", {
+    name: "Elektrihind",
+    importance: Notifications.AndroidImportance.MIN,
+    enableVibrate: false,
+    sound: undefined,
+    enableLights: false,
+    showBadge: false,
+    lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
+  });
+}
+
+export function alertNoPermissions() {
+  Alert.alert("Teavitused on keelatud", "Luba teavitused süsteemi seadetest", [
+    {
+      text: "Ava seaded",
+      onPress: () => {
+        Linking.openSettings();
+      },
+    },
+    {
+      text: "Sulge",
+    },
+  ]);
+}
+
+export async function getNotificationPermission() {
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  if (existingStatus !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+  return finalStatus;
+}
 
 notifee.onForegroundEvent(async ({ type, detail }) => {
   if (type === EventType.ACTION_PRESS && detail.pressAction.id === "update") {

@@ -39,7 +39,12 @@ import { getColor, getGradient } from "./src/utils/colorUtils";
 import { SettingsButton } from "./src/components/SettingsButton";
 import { Chart } from "./src/components/Chart";
 import { tickFormatter } from "./src/utils/tickFormatter";
-import { showPriceNotification } from "./src/utils/notification";
+import {
+  alertNoPermissions,
+  getNotificationPermission,
+  registerNotificationChannel,
+  showPriceNotification,
+} from "./src/utils/notification";
 import { ONE_HOUR } from "./src/utils/constants";
 
 const BACKGROUND_FETCH_TASK = "background-fetch";
@@ -87,6 +92,7 @@ export default function App() {
   const [color, setColor] = useState("transparent");
   const oldColor = usePrevious(color);
   const [status, setStatus] = useState(null);
+  const [notificationPermission, setNotificationPermission] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [data, setData] = useAsyncStorage<
     Array<{ timestamp: number; price: number }>
@@ -123,6 +129,23 @@ export default function App() {
       subscription.remove();
     };
   }, []);
+
+  useEffect(() => {
+    async function initNotificationChannel() {
+      const finalStatus = await getNotificationPermission();
+      if (finalStatus !== "granted") {
+        alertNoPermissions();
+        return;
+      }
+      await registerNotificationChannel();
+      console.log("channel registered");
+      setNotificationPermission(true);
+    }
+
+    if (isNotificationEnabled) {
+      initNotificationChannel();
+    }
+  }, [isNotificationEnabled]);
 
   const _handleAppStateChange = (nextAppState) => {
     appState.current = nextAppState;
@@ -174,16 +197,22 @@ export default function App() {
     }
     if (isNotificationEnabled) {
       checkStatusAsync();
-      channelPromise.then(() => {
+
+      if (notificationPermission) {
         showPriceNotification();
-      });
+      }
     } else {
       unregisterBackgroundFetchAsync();
       setIsRegistered(false);
       notifee.cancelDisplayedNotifications();
       AsyncStorage.setItem("lastNowTimestamp", "");
     }
-  }, [isNotificationEnabled, isVatEnabled, isNotificationColorEnabled]);
+  }, [
+    isNotificationEnabled,
+    isVatEnabled,
+    isNotificationColorEnabled,
+    notificationPermission,
+  ]);
 
   const checkStatusAsync = async () => {
     const status = await BackgroundFetch.getStatusAsync();
@@ -523,27 +552,19 @@ const styles = StyleSheet.create({
   },
 });
 
-let channelResolve;
-const channelPromise = new Promise((resolve, reject) => {
-  channelResolve = resolve;
-});
-
-if (Platform.OS === "android") {
-  Notifications.setNotificationChannelAsync("price", {
-    name: "Elektrihind",
-    importance: Notifications.AndroidImportance.MIN,
-    enableVibrate: false,
-    sound: undefined,
-    enableLights: false,
-    showBadge: false,
-    lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
-  }).then(() => {
-    channelResolve();
-  });
-
-  console.log("channel registered");
-} else {
-  channelResolve();
+function registerChannel() {
+  if (Platform.OS === "android") {
+    Notifications.setNotificationChannelAsync("price", {
+      name: "Elektrihind",
+      importance: Notifications.AndroidImportance.MIN,
+      enableVibrate: false,
+      sound: undefined,
+      enableLights: false,
+      showBadge: false,
+      lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
+    });
+    console.log("channel registered");
+  }
 }
 
 async function registerForPushNotificationsAsync() {
