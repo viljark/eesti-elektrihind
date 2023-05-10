@@ -47,7 +47,12 @@ export async function getNotificationPermission() {
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
-  return finalStatus;
+
+  let token;
+  if (finalStatus === "granted") {
+    token = (await Notifications.getExpoPushTokenAsync()).data;
+  }
+  return { status: finalStatus, token };
 }
 
 notifee.onForegroundEvent(async ({ type, detail }) => {

@@ -1,6 +1,4 @@
-import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { AndroidNotificationVisibility } from "expo-notifications";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import analytics from "@react-native-firebase/analytics";
 
@@ -13,7 +11,6 @@ import {
 } from "@expo-google-fonts/inter";
 import {
   AppState,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -132,14 +129,15 @@ export default function App() {
 
   useEffect(() => {
     async function initNotificationChannel() {
-      const finalStatus = await getNotificationPermission();
-      if (finalStatus !== "granted") {
+      const { status, token } = await getNotificationPermission();
+      if (status !== "granted") {
         alertNoPermissions();
         return;
       }
       await registerNotificationChannel();
       console.log("channel registered");
       setNotificationPermission(true);
+      setExpoPushToken(token);
     }
 
     if (isNotificationEnabled) {
@@ -244,12 +242,6 @@ export default function App() {
     });
     setColor(getColor(data[nowHourIndex].price));
   }, [hourRef, priceRef, hoursToRef, setColor, data, nowHourIndex]);
-
-  useEffect(() => {
-    registerForPushNotificationsAsync().then((token) => {
-      setExpoPushToken(token);
-    });
-  }, []);
 
   const handleBarTouch = useCallback(
     ([{ timestamp, price }]) => {
@@ -551,42 +543,3 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_200ExtraLight",
   },
 });
-
-function registerChannel() {
-  if (Platform.OS === "android") {
-    Notifications.setNotificationChannelAsync("price", {
-      name: "Elektrihind",
-      importance: Notifications.AndroidImportance.MIN,
-      enableVibrate: false,
-      sound: undefined,
-      enableLights: false,
-      showBadge: false,
-      lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
-    });
-    console.log("channel registered");
-  }
-}
-
-async function registerForPushNotificationsAsync() {
-  let token;
-  if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.requestPermissionsAsync();
-
-    let finalStatus = existingStatus;
-
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.getPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== "granted") {
-      return;
-    }
-    token = (await Notifications.getExpoPushTokenAsync()).data;
-    console.log(token);
-  } else {
-    // alert("Must use physical device for Push Notifications");
-  }
-
-  return token;
-}
