@@ -445,6 +445,7 @@ export default function App() {
                     }}
                   >
                     <TextInput
+                      allowFontScaling={false}
                       ref={priceRef}
                       editable={false}
                       textAlign="center"
