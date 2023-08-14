@@ -1,4 +1,5 @@
 # eesti-elektrihind
+![Y4fU8mXBYxc3_1024_500](https://github.com/viljark/eesti-elektrihind/assets/1067120/8979d39e-ba63-4024-811b-a3161bb1046b)
 
 An Expo/React Native app for viewing electricity exchange prices in Estonia.
 
