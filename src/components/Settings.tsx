@@ -155,9 +155,12 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
           value={isNotificationEnabled}
           Icon={Bell}
         />
-        {isNotificationEnabled && !isDarkTheme && (
+        {isNotificationEnabled && (
           <Toggle
-            label="Kasuta teavituses värve"
+            label={
+              "Kasuta teavituses värve" +
+              (isDarkTheme ? " (ei pruugi tumedas režiimis toimida)" : "")
+            }
             onToggle={toggleNotificationColor}
             value={isNotificationColorEnabled}
             Icon={Paintbucket}

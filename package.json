@@ -9,6 +9,7 @@
     "build:android:production": "yarn prebuild && eas build -p android --profile production",
     "update:preview": "eas update --branch preview",
     "update:production": "eas update --branch production",
+    "submit": "eas submit --platform android --profile production",
     "android": "npx expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
