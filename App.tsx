@@ -171,7 +171,7 @@ export default function App() {
       const prices = await getCurrentPrices(isHistoryEnabled);
       const formattedPrices = prices.map((entry) => {
         const price = isVatEnabled
-          ? round((entry.price + entry.price * 0.2) / 10)
+          ? round((entry.price + entry.price * 0.22) / 10)
           : round(entry.price / 10);
         return {
           timestamp: entry.timestamp * 1000,

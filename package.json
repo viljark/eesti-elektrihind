@@ -7,6 +7,7 @@
     "build:dev": "eas build --profile development --platform android",
     "build:android:preview": "yarn prebuild && eas build -p android --profile preview",
     "build:android:production": "yarn prebuild && eas build -p android --profile production",
+    "build:submit:android:production": "yarn prebuild && eas build -p android --profile production --auto-submit-with-profile=production",
     "update:preview": "eas update --branch preview",
     "update:production": "eas update --branch production",
     "submit": "eas submit --platform android --profile production",

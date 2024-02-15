@@ -94,7 +94,7 @@ export async function showPriceNotification() {
     const nextHour = new Date(time.getTime() + ONE_HOUR);
     const price =
       isVatEnabled === "true" || isVatEnabled === null
-        ? Math.round((entry.price + entry.price * 0.2) / 10)
+        ? Math.round((entry.price + entry.price * 0.22) / 10)
         : Math.round(entry.price / 10);
     return {
       hours: `${formatHours(time)} - ${formatHours(nextHour)}`,
