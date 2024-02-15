@@ -11,8 +11,9 @@ import { ONE_HOUR } from "./constants";
 import analytics from "@react-native-firebase/analytics";
 import * as Notifications from "expo-notifications";
 import { AndroidNotificationVisibility } from "expo-notifications";
-import { Alert } from "react-native";
+import { Alert, Share } from "react-native";
 import * as Linking from "expo-linking";
+import { Notification } from "@notifee/react-native/src/types/Notification";
 
 export async function registerNotificationChannel() {
   return Notifications.setNotificationChannelAsync("price", {
@@ -61,6 +62,11 @@ notifee.onForegroundEvent(async ({ type, detail }) => {
     await showPriceNotification();
     await analytics().logEvent("notification_action_update");
   }
+  if (type === EventType.ACTION_PRESS && detail.pressAction.id === "share") {
+    notifee.hideNotificationDrawer();
+    share(detail.notification);
+    await analytics().logEvent("notification_action_share");
+  }
 });
 
 notifee.onBackgroundEvent(async (event) => {
@@ -71,8 +77,28 @@ notifee.onBackgroundEvent(async (event) => {
     await showPriceNotification();
     await analytics().logEvent("notification_action_update");
   }
+  if (
+    event.type === EventType.ACTION_PRESS &&
+    event.detail.pressAction.id === "share"
+  ) {
+    share(event.detail.notification);
+    await analytics().logEvent("notification_action_share");
+  }
   return Promise.resolve();
 });
+
+async function share(notification: Notification) {
+  let text = notification.title + "\n" + notification.body;
+  text = text.replace(/(<([^>]+)>)/gi, "");
+
+  try {
+    await Share.share({
+      message: text,
+    });
+  } catch (error) {
+    console.error("Error sharing:", error);
+  }
+}
 
 export async function showPriceNotification() {
   const prices = await getCurrentPrices();
@@ -123,8 +149,8 @@ export async function showPriceNotification() {
 
   await showPushNotification({
     title: isNotificationColorEnabled
-      ? `<span style="color:${textColor}"><strong>${currentPrice.price} s/kWh</strong></span>  • <i>${currentPrice.hours}</i>`
-      : `<strong>${currentPrice.price} s/kWh</strong>  • <i>${currentPrice.hours}</i>`,
+      ? `<span style="color:${textColor}"><strong>${currentPrice.price} s/kWh</strong></span> • <i>${currentPrice.hours}</i>`
+      : `<strong>${currentPrice.price} s/kWh</strong> • <i>${currentPrice.hours}</i>`,
     body,
     color,
   });
@@ -160,6 +186,12 @@ async function showPushNotification({ title, body, color }) {
           title: "Uuenda andmeid",
           pressAction: {
             id: "update",
+          },
+        },
+        {
+          title: "Jaga",
+          pressAction: {
+            id: "share",
           },
         },
       ],
