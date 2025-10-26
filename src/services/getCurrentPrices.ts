@@ -14,7 +14,7 @@ export async function getCurrentPrices(withHistory = false) {
   start.setSeconds(0);
   start.setMilliseconds(0);
   if (withHistory) {
-    start = new Date(start.getTime() - 1000 * 60 * 60 * 6);
+    start = new Date(start.getTime() - 1000 * 60 * 60 * 12);
   }
   const end = new Date(start.getTime() + 1000 * 60 * 60 * 35);
   const response: InputData = await fetch(

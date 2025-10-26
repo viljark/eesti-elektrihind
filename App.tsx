@@ -112,7 +112,7 @@ export default function App() {
     isNotificationColorEnabled,
     is15min,
   } = useSnapshot(settingsState);
-  const nowHourIndex = isHistoryEnabled ? 6 : 0;
+  const nowHourIndex = isHistoryEnabled ? 12 : 0;
 
   const [fontsLoaded] = useFonts({
     Inter_300Light,
