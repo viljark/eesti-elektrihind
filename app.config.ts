@@ -12,11 +12,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: "default",
   icon: "./assets/icon.png",
   userInterfaceStyle: "dark",
-  splash: {
-    image: "./assets/splash.png",
-    resizeMode: "contain",
-    backgroundColor: "#000000",
-  },
   updates: {
     fallbackToCacheTimeout: 0,
     // TODO: Create a new EAS Update channel/URL for the dev environment
@@ -67,5 +62,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "@react-native-firebase/app",
     "@react-native-firebase/perf",
     "@react-native-firebase/crashlytics",
+    [
+      "expo-splash-screen",
+      {
+        backgroundColor: "#000000",
+        image: isDev
+          ? "./assets/adaptive-icon-dev.png"
+          : "./assets/adaptive-icon.png",
+        imageWidth: 200,
+        resizeMode: "contain",
+      },
+    ],
   ],
 });
