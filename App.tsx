@@ -11,17 +11,16 @@ import {
 } from "@expo-google-fonts/inter";
 import {
   AppState,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
-import * as Haptics from "expo-haptics";
-import { ImpactFeedbackStyle } from "expo-haptics";
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
-import { formatHours, round } from "./formatters";
+import { formatHours, formatTime, round } from "./formatters";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { commonStyles } from "./styles";
 import useAsyncStorage from "./useAsyncStorage";
@@ -30,20 +29,24 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { usePrevious } from "./usePrevious";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
-import { getCurrentPrices } from "./src/services/getCurrentPrices";
-import { Settings, useSharedSettings } from "./src/components/Settings";
+import {
+  calculateHourlyAverage,
+  getCurrentPrices,
+} from "./src/services/getCurrentPrices";
+import { Settings, settingsState } from "./src/components/Settings";
 import { getColor, getGradient } from "./src/utils/colorUtils";
 import { SettingsButton } from "./src/components/SettingsButton";
 import { Chart } from "./src/components/Chart";
-import { tickFormatter } from "./src/utils/tickFormatter";
 import {
   alertNoPermissions,
   getNotificationPermission,
   registerNotificationChannel,
   showPriceNotification,
 } from "./src/utils/notification";
-import { ONE_HOUR } from "./src/utils/constants";
-
+import { FIFTEEN_MINUTES, ONE_HOUR } from "./src/utils/constants";
+import { setNativeProps } from "./src/utils/setNativeProps";
+import Toggle from "react-native-toggle-element";
+import { useSnapshot } from "valtio/react";
 const BACKGROUND_FETCH_TASK = "background-fetch";
 
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
@@ -79,7 +82,9 @@ Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: false,
+    shouldShowList: false,
     shouldSetBadge: false,
+    shouldShowBanner: false,
   }),
 });
 
@@ -94,19 +99,19 @@ export default function App() {
   const [data, setData] = useAsyncStorage<
     Array<{ timestamp: number; price: number }>
   >("data", []);
-  const hourRef = useRef<TextInput>();
-  const hoursToRef = useRef<TextInput>();
-  const priceRef = useRef<TextInput>();
+  const hourRef = useRef<TextInput>(null);
+  const hoursToRef = useRef<TextInput>(null);
+  const priceRef = useRef<TextInput>(null);
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
   const { width, height } = useWindowDimensions();
   const {
     isNotificationEnabled,
     isHistoryEnabled,
-    isVibrationEnabled,
     isVatEnabled,
     isNotificationColorEnabled,
-  } = useSharedSettings();
+    is15min,
+  } = useSnapshot(settingsState);
   const nowHourIndex = isHistoryEnabled ? 6 : 0;
 
   const [fontsLoaded] = useFonts({
@@ -155,7 +160,8 @@ export default function App() {
       appStateVisible === "active" &&
       isHistoryEnabled !== null &&
       isVatEnabled !== null &&
-      isNotificationColorEnabled !== null
+      isNotificationColorEnabled !== null &&
+      is15min !== null
     ) {
       init();
     }
@@ -164,11 +170,16 @@ export default function App() {
     isHistoryEnabled,
     isVatEnabled,
     isNotificationColorEnabled,
+    is15min,
   ]);
 
   async function init() {
     async function initGraph() {
-      const prices = await getCurrentPrices(isHistoryEnabled);
+      let prices = await getCurrentPrices(isHistoryEnabled);
+
+      if (!is15min) {
+        prices = calculateHourlyAverage(prices);
+      }
       const formattedPrices = prices.map((entry) => {
         const price = isVatEnabled
           ? round((entry.price + entry.price * 0.24) / 10)
@@ -180,7 +191,7 @@ export default function App() {
         };
       });
       setData(formattedPrices);
-      tickFormatter.cache.clear();
+      // tickFormatter.cache.clear();
     }
     initGraph();
   }
@@ -213,6 +224,9 @@ export default function App() {
   ]);
 
   const checkStatusAsync = async () => {
+    if (Platform.OS === "web") {
+      return;
+    }
     const status = await BackgroundFetch.getStatusAsync();
     const isRegistered = await TaskManager.isTaskRegisteredAsync(
       BACKGROUND_FETCH_TASK
@@ -231,14 +245,17 @@ export default function App() {
   }, [data, fontsLoaded]);
 
   const setCurrentPrice = useCallback(() => {
-    hourRef.current.setNativeProps({
+    setNativeProps(hourRef, {
       text: "hetkel",
+      value: "hetkel",
     });
-    hoursToRef.current.setNativeProps({
+    setNativeProps(hoursToRef, {
       text: "",
+      value: "",
     });
-    priceRef.current.setNativeProps({
+    setNativeProps(priceRef, {
       text: String(data[nowHourIndex].price.toFixed(2)),
+      value: String(data[nowHourIndex].price.toFixed(2)),
     });
     setColor(getColor(data[nowHourIndex].price));
   }, [hourRef, priceRef, hoursToRef, setColor, data, nowHourIndex]);
@@ -246,8 +263,10 @@ export default function App() {
   const handleBarTouch = useCallback(
     ([{ timestamp, price }]) => {
       const date = new Date(timestamp);
-      const hourNow = formatHours(date);
-      const nextHour = formatHours(new Date(timestamp + ONE_HOUR));
+      const hourNow = formatTime(date);
+      const nextTime = formatTime(
+        new Date(timestamp + (is15min ? FIFTEEN_MINUTES : ONE_HOUR))
+      );
       const diff = timestamp - new Date().getTime();
       const hours = Math.floor(diff / ONE_HOUR);
       const minutes = Math.round((diff % ONE_HOUR) / (1000 * 60));
@@ -261,21 +280,18 @@ export default function App() {
           hoursTo += `${hoursTo === "+" ? "" : " "}${minutes}min`;
         }
       }
-      hourRef.current.setNativeProps({
-        text: `${hourNow}:00 - ${nextHour}:00`,
+      setNativeProps(hourRef, {
+        text: `${hourNow} - ${nextTime}`,
       });
-      hoursToRef.current.setNativeProps({
+      setNativeProps(hoursToRef, {
         text: hoursTo,
       });
-      priceRef.current.setNativeProps({
+      setNativeProps(priceRef, {
         text: String(price.toFixed(2)),
       });
-      if (isVibrationEnabled) {
-        Haptics.impactAsync(ImpactFeedbackStyle.Light);
-      }
       setColor(getColor(price));
     },
-    [hourRef, priceRef, hoursToRef, isVibrationEnabled]
+    [hourRef, priceRef, hoursToRef]
   );
 
   const graphWidth = isLandscape ? 0.7 * width : width - width / 10;
@@ -454,6 +470,7 @@ export default function App() {
                     <Text style={styles.cents}>senti / kWh</Text>
                   </View>
                 </View>
+
                 <Chart
                   width={graphWidth}
                   landscape={isLandscape}
@@ -467,6 +484,58 @@ export default function App() {
                     index % 1 === 0 ? `${Math.round(datum.price)}` : ""
                   }
                 />
+                <View
+                  style={{
+                    width: "100%",
+                    alignItems: "center",
+                    paddingVertical: 16,
+                  }}
+                >
+                  <Toggle
+                    value={!is15min}
+                    onPress={(newState) => {
+                      settingsState.is15min = !newState;
+                      console.log("newState", newState);
+                    }}
+                    leftComponent={
+                      <Text
+                        style={{
+                          color: "white",
+                          fontFamily: "Inter_200ExtraLight",
+                        }}
+                      >
+                        15m
+                      </Text>
+                    }
+                    rightComponent={
+                      <Text
+                        style={{
+                          color: "white",
+                          fontFamily: "Inter_200ExtraLight",
+                        }}
+                      >
+                        1h
+                      </Text>
+                    }
+                    leftTitle="15m"
+                    rightTitle="1h"
+                    thumbStyle={{
+                      backgroundColor: "#0F2027",
+                      boxShadow: "1px 0px 3px rgba(0,0,0,0.3)",
+                      width: 50,
+                      height: 30,
+                    }}
+                    trackBarStyle={{
+                      zIndex: -1,
+                      backgroundColor: "#355C7D",
+                      boxShadow: "inset 0px 3px 6px rgba(0,0,0,0.3)",
+                    }}
+                    trackBar={{
+                      height: 30,
+                      width: 100,
+                    }}
+                  />
+                </View>
 
                 {isLandscape && (
                   <View style={{ position: "absolute", bottom: 0, left: 0 }}>

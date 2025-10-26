@@ -4,9 +4,14 @@
   },
   "build": {
     "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
+	  "developmentClient": true,
+	  "distribution": "internal",
+	  "android": {
+		"env": {
+		  "APP_VARIANT": "development"
+		}
+	  }
+	},
     "preview": {
 	  "channel": "preview",
       "distribution": "internal",

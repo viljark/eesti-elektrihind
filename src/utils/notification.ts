@@ -1,19 +1,20 @@
 import { getCurrentPrices } from "../services/getCurrentPrices";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { formatHours } from "../../formatters";
+import { formatHours, formatTime } from "../../formatters";
 import {
   getNotificationIconColor,
   getNotificationTextColor,
 } from "./colorUtils";
 import { uniqueId } from "lodash";
 import notifee, { AndroidStyle, EventType } from "@notifee/react-native";
-import { ONE_HOUR } from "./constants";
+import { FIFTEEN_MINUTES, ONE_HOUR } from "./constants";
 import analytics from "@react-native-firebase/analytics";
 import * as Notifications from "expo-notifications";
 import { AndroidNotificationVisibility } from "expo-notifications";
 import { Alert, Share } from "react-native";
 import * as Linking from "expo-linking";
 import { Notification } from "@notifee/react-native/src/types/Notification";
+import { settingsState } from "../components/Settings";
 
 export async function registerNotificationChannel() {
   return Notifications.setNotificationChannelAsync("price", {
@@ -103,7 +104,9 @@ async function share(notification: Notification) {
 export async function showPriceNotification() {
   const prices = await getCurrentPrices();
   const lastNowTimestamp = await AsyncStorage.getItem("lastNowTimestamp");
-  const isVatEnabled = await AsyncStorage.getItem("vat");
+  const isVatEnabled = settingsState.isVatEnabled;
+  const is15min = settingsState.is15min;
+
   if (
     lastNowTimestamp &&
     lastNowTimestamp === String(prices[0].timestamp) + isVatEnabled
@@ -117,21 +120,24 @@ export async function showPriceNotification() {
   }
   const formattedPrices = prices.map((entry) => {
     const time = new Date(entry.timestamp * 1000);
-    const nextHour = new Date(time.getTime() + ONE_HOUR);
+
+    console.log("");
+    const nextTime = new Date(
+      time.getTime() + (is15min ? FIFTEEN_MINUTES : ONE_HOUR)
+    );
     const price =
-      isVatEnabled === "true" || isVatEnabled === null
+      isVatEnabled || isVatEnabled === null
         ? Math.round((entry.price + entry.price * 0.24) / 10)
         : Math.round(entry.price / 10);
     return {
-      hours: `${formatHours(time)} - ${formatHours(nextHour)}`,
+      hours: `${formatTime(time)} - ${formatTime(nextTime)}`,
       // eslint-disable-next-line no-compare-neg-zero
       price: price === -0 ? 0 : price,
     };
   });
   const [currentPrice, ...nextPrices] = formattedPrices;
 
-  const isNotificationColorEnabled =
-    (await AsyncStorage.getItem("notificationColor")) !== "false";
+  const isNotificationColorEnabled = settingsState.isNotificationColorEnabled;
 
   const body = nextPrices
     .slice(0, 12)

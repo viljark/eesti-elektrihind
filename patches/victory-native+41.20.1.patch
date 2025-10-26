@@ -1,0 +1,77 @@
+diff --git a/node_modules/victory-native/src/cartesian/CartesianChart.tsx b/node_modules/victory-native/src/cartesian/CartesianChart.tsx
+index 5bccfa1..81a2a54 100644
+--- a/node_modules/victory-native/src/cartesian/CartesianChart.tsx
++++ b/node_modules/victory-native/src/cartesian/CartesianChart.tsx
+@@ -57,6 +57,7 @@ import { GestureHandler } from "../shared/GestureHandler";
+ import { boundsToClip } from "../utils/boundsToClip";
+ import { normalizeYAxisTicks } from "../utils/normalizeYAxisTicks";
+ import { createFallbackChartState } from "./utils/createFallbackChartState";
++import {getTransformComponents} from "victory-native"
+ 
+ export type CartesianActionsHandle<T = undefined> =
+   T extends ChartPressState<infer S>
+@@ -317,6 +318,7 @@ function CartesianChartContent<
+   /**
+    * Take a "press value" and an x-value and update the shared values accordingly.
+    */
++  const xOffset = Math.min(xScale.range()[0]!, 0)
+   const handleTouch = (
+     v: ChartPressState<{
+       x: InputFields<RawData>[XK];
+@@ -326,8 +328,8 @@ function CartesianChartContent<
+     y: number,
+   ) => {
+     "worklet";
+-    const idx = findClosestPoint(tData.value.ox, x);
+-
++    const decomposed = getTransformComponents(transformState.matrix.value);
++    const idx = findClosestPoint(tData.value.ox, x - decomposed.translateX); // avoid translating gesture handler itself, here shift the location by translateX "scroll" amount to find correct bar
+     if (typeof idx !== "number") return;
+ 
+     const isInYs = (yk: string): yk is YK & string => yKeys.includes(yk as YK);
+@@ -485,7 +487,6 @@ function CartesianChartContent<
+         const touchId = touch?.id;
+         const idx = typeof touchId === "number" && touchMap.value[touchId];
+         const v = typeof idx === "number" && vals?.[idx];
+-
+         if (!v || !touch) continue;
+         if (!v.isActive.value) v.isActive.value = true;
+         handleTouch(v, touch.x, touch.y);
+diff --git a/node_modules/victory-native/src/cartesian/components/BarGraphLabels.tsx b/node_modules/victory-native/src/cartesian/components/BarGraphLabels.tsx
+index c9fb218..ac32439 100644
+--- a/node_modules/victory-native/src/cartesian/components/BarGraphLabels.tsx
++++ b/node_modules/victory-native/src/cartesian/components/BarGraphLabels.tsx
+@@ -7,6 +7,7 @@ export type BarLabelConfig = {
+   position: "top" | "bottom" | "left" | "right";
+   font: SkFont | null;
+   color?: Color;
++  format?: (value: number | string) => string;
+ };
+ 
+ type BarGraphLabelProps = {
+@@ -29,7 +30,9 @@ export const BarGraphLabels = ({
+ 
+   // Loop over the data points and position each label
+   return points.map(({ x, y = 0, yValue }) => {
+-    const yText = yValue?.toString() ?? "";
++	  const yText = options.format
++		  ? options.format(yValue ? yValue : "")
++		  : yValue?.toString() ?? "";
+     const labelWidth = getFontGlyphWidth(yText, font);
+ 
+     let xOffset;
+diff --git a/node_modules/victory-native/src/shared/GestureHandler.tsx b/node_modules/victory-native/src/shared/GestureHandler.tsx
+index 79f1955..dd440fd 100644
+--- a/node_modules/victory-native/src/shared/GestureHandler.tsx
++++ b/node_modules/victory-native/src/shared/GestureHandler.tsx
+@@ -39,8 +39,8 @@ export const GestureHandler = ({
+     if (transformState?.matrix.value) {
+       const decomposed = getTransformComponents(transformState.matrix.value);
+       transforms = [
+-        { translateX: decomposed.translateX },
+-        { translateY: decomposed.translateY },
++        // { translateX: decomposed.translateX }, // avoid translating gesture handler itself
++        // { translateY: decomposed.translateY },
+         { scaleX: decomposed.scaleX },
+         { scaleY: decomposed.scaleY },
+       ];

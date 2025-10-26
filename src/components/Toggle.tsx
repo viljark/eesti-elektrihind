@@ -1,16 +1,16 @@
-import React from "react";
+import React, { ComponentProps } from "react";
 import { Switch, Text, TouchableOpacity, View } from "react-native";
-import { SvgProps } from "react-native-svg";
+import Icon from "@expo/vector-icons/MaterialCommunityIcons";
+
+type IconName = ComponentProps<typeof Icon>["name"];
 
 interface Props {
   label: string;
   value: boolean;
   onToggle: () => void;
-  Icon: React.ForwardRefExoticComponent<
-    SvgProps & React.RefAttributes<SVGSVGElement>
-  >;
+  icon: IconName;
 }
-export const Toggle: React.FC<Props> = ({ label, value, onToggle, Icon }) => {
+export const Toggle: React.FC<Props> = ({ label, value, onToggle, icon }) => {
   return (
     <View style={{ borderBottomColor: "#203A43", borderBottomWidth: 1 }}>
       <TouchableOpacity
@@ -33,8 +33,8 @@ export const Toggle: React.FC<Props> = ({ label, value, onToggle, Icon }) => {
           }}
         >
           <Icon
-            width={24}
-            height={24}
+            name={icon}
+            size={24}
             color="#fff"
             style={{ marginRight: 8, flex: 0, flexBasis: 24 }}
           />

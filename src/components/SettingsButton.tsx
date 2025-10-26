@@ -1,6 +1,7 @@
-import { Settings as SettingsIcon } from "@nandorojo/iconic";
 import { MotiPressable } from "moti/interactions";
 import React from "react";
+import Icon from "@expo/vector-icons/MaterialCommunityIcons";
+
 interface Props {
   onPress: () => void;
 }
@@ -19,7 +20,7 @@ export const SettingsButton: React.FC<Props> = (props) => {
         };
       }}
     >
-      <SettingsIcon width={42} height={42} color="white" />
+      <Icon size={42} color="white" name="cog" />
     </MotiPressable>
   );
 };

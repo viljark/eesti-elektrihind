@@ -1,3 +1,5 @@
+import { ColorValue } from "react-native";
+
 export const getGradientTopColor = (color: string) => {
   switch (color) {
     case "magenta":
@@ -12,7 +14,9 @@ export const getGradientTopColor = (color: string) => {
   return "#bd5d78";
 };
 
-export const getGradient = (color: string) => {
+export const getGradient = (
+  color: string
+): [ColorValue, ColorValue, ...ColorValue[]] => {
   switch (color) {
     case "magenta":
       return ["#e722dd", "#7c4b6c", "#355C7D"];

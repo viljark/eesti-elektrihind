@@ -1,3 +1,9 @@
+const API_URL = __DEV__
+  ? // ? "http://192.16.8.8.192:3003"
+    // "http://localhost:3003"
+    "https://dashboard.elering.ee"
+  : "https://dashboard.elering.ee";
+
 export async function getCurrentPrices(withHistory = false) {
   const now = new Date();
   let start = new Date();
@@ -10,9 +16,10 @@ export async function getCurrentPrices(withHistory = false) {
   if (withHistory) {
     start = new Date(start.getTime() - 1000 * 60 * 60 * 6);
   }
-  const end = new Date(start.getTime() + 1000 * 60 * 60 * 23);
+  const end = new Date(start.getTime() + 1000 * 60 * 60 * 35);
   const response: InputData = await fetch(
-    "https://dashboard.elering.ee/api/nps/price?" +
+    API_URL +
+      "/api/nps/price?" +
       new URLSearchParams({
         start: start.toISOString(),
         end: end.toISOString(),
@@ -25,7 +32,7 @@ export async function getCurrentPrices(withHistory = false) {
     }
   ).then((res) => res.json());
 
-  return calculateHourlyAverage(response);
+  return response.data.ee;
 }
 
 interface PriceDataPoint {
@@ -45,8 +52,10 @@ interface HourlyAverage {
   price: number;
 }
 
-function calculateHourlyAverage(data: InputData): HourlyAverage[] {
-  const prices = data.data.ee;
+export function calculateHourlyAverage(
+  data: PriceDataPoint[]
+): HourlyAverage[] {
+  const prices = data;
 
   // 1. Group prices by the hour
   // The key is the standardized ISO string for the start of the hour
