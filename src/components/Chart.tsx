@@ -37,7 +37,7 @@ export function Chart(props: {
 }) {
   const fontSize = props.landscape ? 12 : 10;
   const font = useFont(InterMedium, fontSize);
-
+  const scrollViewRef = useRef<ScrollView>(null);
   const [matchedIndex, setMatchedIndex] = useState(-1);
 
   const { state, isActive } = useChartPressState({
@@ -58,6 +58,9 @@ export function Chart(props: {
     return Math.max((props.width - 100) / props.data.length, 13);
   }, [props.width, props.data]);
 
+  useEffect(() => {
+    scrollViewRef.current?.scrollTo(0);
+  }, [is15min]);
   useAnimatedReaction(
     () => state.matchedIndex.value,
     (val, oldVal) => {
@@ -92,7 +95,7 @@ export function Chart(props: {
   }
 
   const chartHeight = props.landscape
-    ? props.height - props.height / 10
+    ? props.height - props.height / 5
     : props.height / 3;
 
   return (
@@ -103,6 +106,7 @@ export function Chart(props: {
       }}
     >
       <ScrollView
+        ref={scrollViewRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{

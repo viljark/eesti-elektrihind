@@ -1,4 +1,7 @@
-import { getCurrentPrices } from "../services/getCurrentPrices";
+import {
+  calculateHourlyAverage,
+  getCurrentPrices,
+} from "../services/getCurrentPrices";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { formatHours, formatTime } from "../../formatters";
 import {
@@ -102,10 +105,13 @@ async function share(notification: Notification) {
 }
 
 export async function showPriceNotification() {
-  const prices = await getCurrentPrices();
+  let prices = await getCurrentPrices();
   const lastNowTimestamp = await AsyncStorage.getItem("lastNowTimestamp");
   const isVatEnabled = settingsState.isVatEnabled;
   const is15min = settingsState.is15min;
+  if (!is15min) {
+    prices = calculateHourlyAverage(prices);
+  }
 
   if (
     lastNowTimestamp &&
@@ -121,7 +127,6 @@ export async function showPriceNotification() {
   const formattedPrices = prices.map((entry) => {
     const time = new Date(entry.timestamp * 1000);
 
-    console.log("");
     const nextTime = new Date(
       time.getTime() + (is15min ? FIFTEEN_MINUTES : ONE_HOUR)
     );

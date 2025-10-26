@@ -470,71 +470,72 @@ export default function App() {
                     <Text style={styles.cents}>senti / kWh</Text>
                   </View>
                 </View>
-
-                <Chart
-                  width={graphWidth}
-                  landscape={isLandscape}
-                  height={height}
-                  onActivated={handleBarTouch}
-                  onTouchEnd={setCurrentPrice}
-                  color={color}
-                  data={data}
-                  nowHourIndex={nowHourIndex}
-                  labels={({ datum, index }) =>
-                    index % 1 === 0 ? `${Math.round(datum.price)}` : ""
-                  }
-                />
-                <View
-                  style={{
-                    width: "100%",
-                    alignItems: "center",
-                    paddingVertical: 16,
-                  }}
-                >
-                  <Toggle
-                    value={!is15min}
-                    onPress={(newState) => {
-                      settingsState.is15min = !newState;
-                      console.log("newState", newState);
-                    }}
-                    leftComponent={
-                      <Text
-                        style={{
-                          color: "white",
-                          fontFamily: "Inter_200ExtraLight",
-                        }}
-                      >
-                        15m
-                      </Text>
+                <View>
+                  <Chart
+                    width={graphWidth}
+                    landscape={isLandscape}
+                    height={height}
+                    onActivated={handleBarTouch}
+                    onTouchEnd={setCurrentPrice}
+                    color={color}
+                    data={data}
+                    nowHourIndex={nowHourIndex}
+                    labels={({ datum, index }) =>
+                      index % 1 === 0 ? `${Math.round(datum.price)}` : ""
                     }
-                    rightComponent={
-                      <Text
-                        style={{
-                          color: "white",
-                          fontFamily: "Inter_200ExtraLight",
-                        }}
-                      >
-                        1h
-                      </Text>
-                    }
-                    leftTitle="15m"
-                    rightTitle="1h"
-                    thumbStyle={{
-                      backgroundColor: "#0F2027",
-                      boxShadow: "1px 0px 3px rgba(0,0,0,0.3)",
-                      width: 50,
-                      height: 30,
-                    }}
-                    trackBarStyle={{
-                      zIndex: -1,
-                      backgroundColor: "#355C7D",
-                      boxShadow: "inset 0px 3px 6px rgba(0,0,0,0.3)",
-                    }}
-                    trackBar={{
-                      height: 30,
-                      width: 100,
-                    }}
                   />
+                  <View
+                    style={{
+                      width: graphWidth,
+                      alignItems: "center",
+                      paddingVertical: 16,
+                    }}
+                  >
+                    <Toggle
+                      value={!is15min}
+                      onPress={(newState) => {
+                        settingsState.is15min = !newState;
+                        console.log("newState", newState);
+                      }}
+                      leftComponent={
+                        <Text
+                          style={{
+                            color: "white",
+                            fontFamily: "Inter_200ExtraLight",
+                          }}
+                        >
+                          15m
+                        </Text>
+                      }
+                      rightComponent={
+                        <Text
+                          style={{
+                            color: "white",
+                            fontFamily: "Inter_200ExtraLight",
+                          }}
+                        >
+                          1h
+                        </Text>
+                      }
+                      leftTitle="15m"
+                      rightTitle="1h"
+                      thumbStyle={{
+                        backgroundColor: "#0F2027",
+                        boxShadow: "1px 0px 3px rgba(0,0,0,0.3)",
+                        width: 50,
+                        height: 30,
+                      }}
+                      trackBarStyle={{
+                        zIndex: -1,
+                        backgroundColor: "#355C7D",
+                        boxShadow: "inset 0px 3px 6px rgba(0,0,0,0.3)",
+                      }}
+                      trackBar={{
+                        height: 30,
+                        width: 100,
+                      }}
+                    />
+                  </View>
                 </View>
 
                 {isLandscape && (
