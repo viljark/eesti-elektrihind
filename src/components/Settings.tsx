@@ -1,4 +1,4 @@
-import BottomSheet from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import {
   Appearance,
   StyleSheet,
@@ -7,66 +7,24 @@ import {
 } from "react-native";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { Toggle } from "./Toggle";
-import {
-  Bell,
-  Clock,
-  Percentage,
-  Target,
-  Paintbucket,
-} from "@nandorojo/iconic";
 import React, { useMemo, useRef } from "react";
-import useAsyncStorage from "../../useAsyncStorage";
-import { useBetween } from "use-between";
 import analytics from "@react-native-firebase/analytics";
+import { createPersistedState } from "../../persistedState";
+import { useSnapshot } from "valtio/react";
 
 interface Props {
   onClose: () => void;
 }
 
-const useSettings = () => {
-  const [isNotificationEnabled, setIsNotificationEnabled] =
-    useAsyncStorage<boolean>("notification", true);
-  const [isNotificationColorEnabled, setIsNotificationColorEnabled] =
-    useAsyncStorage<boolean>("notificationColor", true);
-  const [isHistoryEnabled, setIsHistoryEnabled] = useAsyncStorage<boolean>(
-    "history",
-    false
-  );
-  const [isVibrationEnabled, setIsVibrationEnabled] = useAsyncStorage<boolean>(
-    "vibration",
-    true
-  );
-  const [isVatEnabled, setIsVatEnabled] = useAsyncStorage<boolean>("vat", true);
-
-  return {
-    isNotificationEnabled,
-    isNotificationColorEnabled,
-    isHistoryEnabled,
-    isVibrationEnabled,
-    isVatEnabled,
-    setIsNotificationEnabled,
-    setIsNotificationColorEnabled,
-    setIsHistoryEnabled,
-    setIsVibrationEnabled,
-    setIsVatEnabled,
-  };
-};
-
-export const useSharedSettings = () => useBetween(useSettings);
+export const settingsState = createPersistedState("settings", {
+  isNotificationEnabled: true,
+  isNotificationColorEnabled: true,
+  isHistoryEnabled: false,
+  isVatEnabled: true,
+  is15min: false,
+});
 
 export const Settings: React.FC<Props> = ({ onClose }) => {
-  const {
-    isNotificationEnabled,
-    isNotificationColorEnabled,
-    isHistoryEnabled,
-    isVibrationEnabled,
-    isVatEnabled,
-    setIsNotificationEnabled,
-    setIsNotificationColorEnabled,
-    setIsHistoryEnabled,
-    setIsVibrationEnabled,
-    setIsVatEnabled,
-  } = useSharedSettings();
   const { width, height } = useWindowDimensions();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => {
@@ -76,38 +34,43 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
 
   const isLandscape = width > height;
 
+  const {
+    isNotificationColorEnabled,
+    isNotificationEnabled,
+    isVatEnabled,
+    isHistoryEnabled,
+  } = useSnapshot(settingsState);
+
   const toggleNotification = () => {
-    setIsNotificationEnabled(!isNotificationEnabled);
+    settingsState.isNotificationEnabled = !isNotificationEnabled;
     analytics().logEvent("notification_toggle", {
       value: !isNotificationEnabled,
     });
   };
   const toggleNotificationColor = () => {
-    setIsNotificationColorEnabled(!isNotificationColorEnabled);
+    settingsState.isNotificationColorEnabled = !isNotificationColorEnabled;
+
     analytics().logEvent("notification_color_toggle", {
       value: !isNotificationColorEnabled,
     });
   };
   const toggleHistory = () => {
-    setIsHistoryEnabled(!isHistoryEnabled);
+    settingsState.isHistoryEnabled = !isHistoryEnabled;
+
     analytics().logEvent("history_toggle", {
       value: !isHistoryEnabled,
     });
   };
-  const toggleVibration = () => {
-    setIsVibrationEnabled(!isVibrationEnabled);
-    analytics().logEvent("vibration_toggle", {
-      value: !isVibrationEnabled,
-    });
-  };
   const toggleVat = () => {
-    setIsVatEnabled(!isVatEnabled);
+    settingsState.isVatEnabled = !isVatEnabled;
+
     analytics().logEvent("vat_toggle", {
       value: !isVatEnabled,
     });
   };
   const isDarkTheme = Appearance.getColorScheme() === "dark";
   return (
+    // @ts-ignore
     <BottomSheet
       backdropComponent={(props) => (
         <View {...props} onTouchStart={() => bottomSheetRef.current.close()} />
@@ -138,7 +101,8 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
       enablePanDownToClose={true}
       onClose={onClose}
     >
-      <View style={{ paddingTop: 25, flex: 1 }}>
+      {/*@ts-ignore*/}
+      <BottomSheetView style={{ paddingTop: 25, flex: 1 }}>
         <ExpoLinearGradient
           colors={["#2c5364", "#203A43", "#0F2027"]}
           start={[0.5, 0]}
@@ -153,7 +117,7 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
           label="Näita elektrihinda teavitustes"
           onToggle={toggleNotification}
           value={isNotificationEnabled}
-          Icon={Bell}
+          icon="alert-circle"
         />
         {isNotificationEnabled && (
           <Toggle
@@ -163,7 +127,7 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
             }
             onToggle={toggleNotificationColor}
             value={isNotificationColorEnabled}
-            Icon={Paintbucket}
+            icon="format-color-fill"
           />
         )}
 
@@ -171,21 +135,15 @@ export const Settings: React.FC<Props> = ({ onClose }) => {
           label="Näita graafikul eelmiste tundide hinda"
           onToggle={toggleHistory}
           value={isHistoryEnabled}
-          Icon={Clock}
+          icon="history"
         />
         <Toggle
           label="Käibemaks hinna sees"
           onToggle={toggleVat}
           value={isVatEnabled}
-          Icon={Percentage}
+          icon="percent"
         />
-        <Toggle
-          label="Vibreeri graafiku puudutamisel"
-          onToggle={toggleVibration}
-          value={isVibrationEnabled}
-          Icon={Target}
-        />
-      </View>
+      </BottomSheetView>
     </BottomSheet>
   );
 };
