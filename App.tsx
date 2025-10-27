@@ -1,5 +1,11 @@
 import * as Notifications from "expo-notifications";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import analytics from "@react-native-firebase/analytics";
 
 import notifee from "@notifee/react-native";
@@ -112,7 +118,23 @@ export default function App() {
     isNotificationColorEnabled,
     is15min,
   } = useSnapshot(settingsState);
-  const nowHourIndex = isHistoryEnabled ? 12 : 0;
+  const nowHourIndex = useMemo(() => {
+    return data?.findIndex((time) => {
+      const isActive =
+        new Date(time.timestamp).setMinutes(
+          is15min ? new Date(time.timestamp).getMinutes() : 0,
+          0,
+          0
+        ) ===
+        new Date().setMinutes(
+          is15min ? Math.floor(new Date().getMinutes() / 15) * 15 : 0,
+          0,
+          0
+        );
+
+      return isActive;
+    });
+  }, [data]);
 
   const [fontsLoaded] = useFonts({
     Inter_300Light,

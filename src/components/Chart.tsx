@@ -55,11 +55,11 @@ export function Chart(props: {
   const { is15min } = useSnapshot(settingsState);
 
   const barWidth = useMemo(() => {
-    return Math.max((props.width - 100) / props.data.length, 13);
+    return Math.max((props.width - 140) / props.data.length, 13);
   }, [props.width, props.data]);
 
   useEffect(() => {
-    scrollViewRef.current?.scrollTo(0);
+    scrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: true });
   }, [is15min]);
   useAnimatedReaction(
     () => state.matchedIndex.value,
