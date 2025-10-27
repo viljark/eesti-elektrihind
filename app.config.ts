@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   ios: {
     supportsTablet: true,
-    buildNumber: "1.1.4",
+    buildNumber: "2.0.0",
     bundleIdentifier: isDev
       ? "com.viljark.eestielektrihind.dev"
       : "com.viljark.eestielektrihind",
@@ -35,7 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     googleServicesFile: isDev
       ? "./google-services-dev.json"
       : "./google-services.json",
-    versionCode: 10,
+    versionCode: 20,
     adaptiveIcon: {
       foregroundImage: isDev
         ? "./assets/adaptive-icon-dev.png"
