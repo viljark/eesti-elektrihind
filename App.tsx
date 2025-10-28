@@ -119,21 +119,23 @@ export default function App() {
     is15min,
   } = useSnapshot(settingsState);
   const nowHourIndex = useMemo(() => {
-    return data?.findIndex((time) => {
-      const isActive =
-        new Date(time.timestamp).setMinutes(
-          is15min ? new Date(time.timestamp).getMinutes() : 0,
-          0,
-          0
-        ) ===
-        new Date().setMinutes(
-          is15min ? Math.floor(new Date().getMinutes() / 15) * 15 : 0,
-          0,
-          0
-        );
+    return (
+      data?.findIndex((time) => {
+        const isActive =
+          new Date(time.timestamp).setMinutes(
+            is15min ? new Date(time.timestamp).getMinutes() : 0,
+            0,
+            0
+          ) ===
+          new Date().setMinutes(
+            is15min ? Math.floor(new Date().getMinutes() / 15) * 15 : 0,
+            0,
+            0
+          );
 
-      return isActive;
-    });
+        return isActive;
+      }) || 0
+    );
   }, [data]);
 
   const [fontsLoaded] = useFonts({
@@ -517,7 +519,6 @@ export default function App() {
                       value={!is15min}
                       onPress={(newState) => {
                         settingsState.is15min = !newState;
-                        console.log("newState", newState);
                       }}
                       leftComponent={
                         <Text

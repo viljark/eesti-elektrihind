@@ -90,7 +90,7 @@ export function Chart(props: {
   const gradientColors = useMemo(() => ["#2c5364", "#203A43", "#0F2027"], []);
   const gradientPositions = useMemo(() => [0, 0.5, 1], []);
 
-  if (!font) {
+  if (!font || props.data?.length === 0) {
     return null; // Don't render until font is loaded
   }
 
@@ -193,10 +193,10 @@ export function Chart(props: {
                         (index == matchedIndex && isActive) || active
                           ? [
                               getGradientTopColor(
-                                getColor(props.data[index].price)
+                                getColor(props.data[index]?.price)
                               ),
                               getGradientTopColor(
-                                getColor(props.data[index].price)
+                                getColor(props.data[index]?.price)
                               ),
                               "#0F2027",
                             ]
