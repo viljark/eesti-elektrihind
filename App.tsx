@@ -53,6 +53,8 @@ import { FIFTEEN_MINUTES, ONE_HOUR } from "./src/utils/constants";
 import { setNativeProps } from "./src/utils/setNativeProps";
 import Toggle from "react-native-toggle-element";
 import { useSnapshot } from "valtio/react";
+import { Average } from "./src/components/Average";
+import { VAT } from "./src/constants";
 const BACKGROUND_FETCH_TASK = "background-fetch";
 
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
@@ -206,7 +208,7 @@ export default function App() {
       }
       const formattedPrices = prices.map((entry) => {
         const price = isVatEnabled
-          ? round((entry.price + entry.price * 0.24) / 10)
+          ? round((entry.price + entry.price * VAT) / 10)
           : round(entry.price / 10);
         return {
           timestamp: entry.timestamp * 1000,
@@ -269,6 +271,9 @@ export default function App() {
   }, [data, fontsLoaded]);
 
   const setCurrentPrice = useCallback(() => {
+    if (!data[nowHourIndex]) {
+      return;
+    }
     setNativeProps(hourRef, {
       text: "hetkel",
       value: "hetkel",
@@ -508,6 +513,8 @@ export default function App() {
                       index % 1 === 0 ? `${Math.round(datum.price)}` : ""
                     }
                   />
+                  <Average type="today" />
+                  <Average type="tomorrow" />
                   <View
                     style={{
                       width: graphWidth,

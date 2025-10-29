@@ -155,6 +155,9 @@ export function Chart(props: {
           }}
         >
           {({ points, chartBounds }) => {
+            if (!points) {
+              return null;
+            }
             return points.price.map((price, index) => {
               const active =
                 new Date(price.xValue).setMinutes(

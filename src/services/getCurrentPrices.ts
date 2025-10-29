@@ -1,15 +1,11 @@
-const API_URL = __DEV__
+export const API_URL = __DEV__
   ? // ? "http://192.16.8.8.192:3003"
     // "http://localhost:3003"
     "https://dashboard.elering.ee"
   : "https://dashboard.elering.ee";
 
 export async function getCurrentPrices(withHistory = false) {
-  const now = new Date();
   let start = new Date();
-  now.setMinutes(0);
-  now.setSeconds(0);
-  now.setMilliseconds(0);
   start.setMinutes(0);
   start.setSeconds(0);
   start.setMilliseconds(0);
@@ -35,19 +31,19 @@ export async function getCurrentPrices(withHistory = false) {
   return response.data.ee;
 }
 
-interface PriceDataPoint {
+export interface PriceDataPoint {
   timestamp: number;
   price: number;
 }
 
-interface InputData {
+export interface InputData {
   success: boolean;
   data: {
     ee: PriceDataPoint[];
   };
 }
 
-interface HourlyAverage {
+export interface HourlyAverage {
   timestamp: number;
   price: number;
 }

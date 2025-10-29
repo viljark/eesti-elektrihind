@@ -8,7 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   owner: "viljark",
   name: isDev ? "Elektrihind DEV" : "Elektrihind",
   slug: isDev ? "eesti-elektrihind-dev" : "eesti-elektrihind",
-  version: "2.0.0",
+  version: "2.0.2",
   orientation: "default",
   icon: "./assets/icon.png",
   userInterfaceStyle: "dark",
@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   ios: {
     supportsTablet: true,
-    buildNumber: "2.0.0",
+    buildNumber: "2.0.2",
     bundleIdentifier: isDev
       ? "com.viljark.eestielektrihind.dev"
       : "com.viljark.eestielektrihind",
@@ -35,7 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     googleServicesFile: isDev
       ? "./google-services-dev.json"
       : "./google-services.json",
-    versionCode: 20,
+    versionCode: 22,
     adaptiveIcon: {
       foregroundImage: isDev
         ? "./assets/adaptive-icon-dev.png"
