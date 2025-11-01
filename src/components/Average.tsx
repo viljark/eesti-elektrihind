@@ -10,21 +10,18 @@ import { VAT } from "../constants";
 import { useSnapshot } from "valtio/react";
 import { settingsState } from "./Settings";
 import { MotiView } from "moti";
-// Assuming imports for utility and API functions
-// import { getColor } from "../utils/colorUtils";
-// import { getDailyPriceAverages, DailyAverages } from './api';
+import { state } from "../../state";
 
 interface Props {
   type: "today" | "tomorrow";
 }
 
 export function Average({ type }: Props) {
-  // Use null as the initial state for the price before fetching
   const [averagePrice, setAveragePrice] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { isVatEnabled } = useSnapshot(settingsState);
+  const { appState } = useSnapshot(state);
 
-  // Fetch data on component mount (and if 'type' changes, though likely static)
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
@@ -48,9 +45,10 @@ export function Average({ type }: Props) {
         setIsLoading(false);
       }
     }
-
-    fetchData();
-  }, [type, isVatEnabled]);
+    if (appState === "active") {
+      fetchData();
+    }
+  }, [type, isVatEnabled, appState]);
 
   const isToday = type === "today";
 

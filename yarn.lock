@@ -3844,10 +3844,10 @@ expo-asset@~12.0.9:
     "@expo/image-utils" "^0.8.7"
     expo-constants "~18.0.9"
 
-expo-background-fetch@~14.0.7:
-  version "14.0.7"
-  resolved "https://registry.yarnpkg.com/expo-background-fetch/-/expo-background-fetch-14.0.7.tgz#20888ae997ce9d62896370b8a01a4f28d1dd625c"
-  integrity sha512-vq/2w/I9OYkYbKn2YmMTzWEZm+Ddl8ObRtKR8s5kpfyGEIHz4rsIuHF1kpqHXuxI/DNZEhAN8fIO2nh+jNW5uQ==
+expo-background-task@~1.0.8:
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/expo-background-task/-/expo-background-task-1.0.8.tgz#d1d1a3788d0055b780343cdbd0fb3563c4bebb2f"
+  integrity sha512-G6WnljBhO0K9j0ntmytF5rZLtYUpwh8n2+hcgmxM1ISPAVVZSPHZhkF9YjBOKpdPWZxmukBgEwejfcGckb8TQQ==
   dependencies:
     expo-task-manager "~14.0.7"
 
@@ -4010,6 +4010,13 @@ expo-task-manager@~14.0.7:
   version "14.0.7"
   resolved "https://registry.yarnpkg.com/expo-task-manager/-/expo-task-manager-14.0.7.tgz#87d89ec73a85d973626be0c363bfa24ba9c4998c"
   integrity sha512-wZRksJg4+Me1wDYmv0wnGh5I30ZOkEpjdXECp/cTKbON1ISQgnaz+4B2eJtljvEPYC1ocBdpAGmz9N0CPtc4mg==
+  dependencies:
+    unimodules-app-loader "~6.0.7"
+
+expo-task-manager@~14.0.8:
+  version "14.0.8"
+  resolved "https://registry.yarnpkg.com/expo-task-manager/-/expo-task-manager-14.0.8.tgz#8cd14c638a5c2544e8dd1a438431bfa44196d378"
+  integrity sha512-HxhyvmulM8px+LQvqIKS85KVx2UodZf5RO+FE2ltpC4mQ5IFkX/ESqiK0grzDa4pVFLyxvs8LjuUKsfB5c39PQ==
   dependencies:
     unimodules-app-loader "~6.0.7"
 
@@ -7599,11 +7606,6 @@ uri-js@^4.2.2:
   integrity sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==
   dependencies:
     punycode "^2.1.0"
-
-use-between@^1.3.5:
-  version "1.3.5"
-  resolved "https://registry.yarnpkg.com/use-between/-/use-between-1.3.5.tgz#8f9db513414d204e0046c5692828e209cec4d564"
-  integrity sha512-IP9eJfszZr0aah/6i/pzaM7n/QgMPwWKJ+mnWqT5O0qFhLnztPbkVC6L7zI6ygeBIMJHfmUGvsw0b28pyrEGSA==
 
 util@^0.12.0:
   version "0.12.4"

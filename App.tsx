@@ -16,7 +16,6 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import {
-  AppState,
   Platform,
   StyleSheet,
   Text,
@@ -24,7 +23,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import * as BackgroundFetch from "expo-background-fetch";
+import * as BackgroundTask from "expo-background-task";
 import * as TaskManager from "expo-task-manager";
 import { formatHours, formatTime, round } from "./formatters";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
@@ -55,6 +54,8 @@ import Toggle from "react-native-toggle-element";
 import { useSnapshot } from "valtio/react";
 import { Average } from "./src/components/Average";
 import { VAT } from "./src/constants";
+import { state } from "./state";
+
 const BACKGROUND_FETCH_TASK = "background-fetch";
 
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
@@ -63,16 +64,18 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   console.log(
     `Got background fetch call at date: ${new Date(now).toISOString()}`
   );
-  await showPriceNotification();
-  // Be sure to return the successful result type!
-  return BackgroundFetch.BackgroundFetchResult.NewData;
+  try {
+    await showPriceNotification();
+    // Be sure to return the successful result type!
+    return BackgroundTask.BackgroundTaskResult.Success;
+  } catch (e) {
+    return BackgroundTask.BackgroundTaskResult.Failed;
+  }
 });
 
 async function registerBackgroundFetchAsync() {
-  return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-    minimumInterval: 60 * 20, // 20 minutes
-    stopOnTerminate: false, // android only,
-    startOnBoot: true, // android only
+  return BackgroundTask.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+    minimumInterval: 15,
   });
 }
 
@@ -83,7 +86,7 @@ async function unregisterBackgroundFetchAsync() {
   if (!isRegistered) {
     return;
   }
-  return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
+  return BackgroundTask.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
 }
 
 Notifications.setNotificationHandler({
@@ -110,8 +113,8 @@ export default function App() {
   const hourRef = useRef<TextInput>(null);
   const hoursToRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
-  const appState = useRef(AppState.currentState);
-  const [appStateVisible, setAppStateVisible] = useState(appState.current);
+  const { appState } = useSnapshot(state);
+
   const { width, height } = useWindowDimensions();
   const {
     isNotificationEnabled,
@@ -120,6 +123,7 @@ export default function App() {
     isNotificationColorEnabled,
     is15min,
   } = useSnapshot(settingsState);
+
   const nowHourIndex = useMemo(() => {
     return (
       data?.findIndex((time) => {
@@ -149,16 +153,6 @@ export default function App() {
   const isLandscape = width > height;
 
   useEffect(() => {
-    const subscription = AppState.addEventListener(
-      "change",
-      _handleAppStateChange
-    );
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
     async function initNotificationChannel() {
       const { status, token } = await getNotificationPermission();
       if (status !== "granted") {
@@ -176,14 +170,9 @@ export default function App() {
     }
   }, [isNotificationEnabled]);
 
-  const _handleAppStateChange = (nextAppState) => {
-    appState.current = nextAppState;
-    setAppStateVisible(appState.current);
-  };
-
   useEffect(() => {
     if (
-      appStateVisible === "active" &&
+      appState === "active" &&
       isHistoryEnabled !== null &&
       isVatEnabled !== null &&
       isNotificationColorEnabled !== null &&
@@ -192,7 +181,7 @@ export default function App() {
       init();
     }
   }, [
-    appStateVisible,
+    appState,
     isHistoryEnabled,
     isVatEnabled,
     isNotificationColorEnabled,
@@ -253,7 +242,7 @@ export default function App() {
     if (Platform.OS === "web") {
       return;
     }
-    const status = await BackgroundFetch.getStatusAsync();
+    const status = await BackgroundTask.getStatusAsync();
     const isRegistered = await TaskManager.isTaskRegisteredAsync(
       BACKGROUND_FETCH_TASK
     );

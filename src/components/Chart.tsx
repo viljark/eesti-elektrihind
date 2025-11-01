@@ -55,7 +55,7 @@ export function Chart(props: {
   const { is15min } = useSnapshot(settingsState);
 
   const barWidth = useMemo(() => {
-    return Math.max((props.width - 140) / props.data.length, 13);
+    return 13;
   }, [props.width, props.data]);
 
   useEffect(() => {
